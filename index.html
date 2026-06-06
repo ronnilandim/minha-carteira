@@ -1149,4 +1149,35 @@ if(state.rv.length>0)document.getElementById('rvLive').innerHTML='<span class="m
 iniciarCountdown();
 iniciarAutoUpdate();
 if(state.rf.length>0)setTimeout(()=>{carregarHistoricoBCB().then(ok=>{if(ok>0){renderRF();renderResumo()}})},500);
-setTim
+setTimeout(()=>{fetchCotacoesMoeda().then(ok=>{if(ok){renderTudo()}})},300);
+atualizarLabelMoeda();
+setInterval(()=>{if(document.getElementById('tab-rf').classList.contains('active')||document.getElementById('tab-dash').classList.contains('active')){renderRF();renderResumo()}},60000);
+
+// ====== PWA Install Prompt ======
+let _deferredPrompt=null;
+window.addEventListener('beforeinstallprompt',(e)=>{
+  e.preventDefault();
+  _deferredPrompt=e;
+  const btn=document.getElementById('btnInstalar');
+  if(btn){btn.style.display='inline-block';}
+  const msg=document.getElementById('msgInstall');
+  if(msg)msg.innerHTML=' <span style="color:var(--green)">App pronto para instalar.</span>';
+});
+async function instalarPWA(){
+  if(!_deferredPrompt){toast('Use o menu do navegador: Compartilhar > Adicionar a tela inicial.','error');return}
+  _deferredPrompt.prompt();
+  const r=await _deferredPrompt.userChoice;
+  if(r.outcome==='accepted'){toast('App instalado!')}
+  _deferredPrompt=null;
+  const btn=document.getElementById('btnInstalar');if(btn)btn.style.display='none';
+}
+window.addEventListener('appinstalled',()=>{toast('App instalado com sucesso!')});
+
+// Detect if running as installed PWA
+if(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches){
+  const msg=document.getElementById('msgInstall');
+  if(msg)msg.innerHTML=' <span class="badge-live">rodando como app instalado</span>';
+}
+</script>
+</body>
+</html>
