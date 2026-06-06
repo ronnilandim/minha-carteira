@@ -88,7 +88,39 @@ details[open] summary{color:var(--text);margin-bottom:8px}
 @keyframes spin{to{transform:rotate(360deg)}}
 .auto-toggle{display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none}
 .auto-toggle input[type=checkbox]{accent-color:var(--accent);width:14px;height:14px;cursor:pointer}
-@media(max-width:600px){th,td{padding:8px 6px;font-size:12px}.container{padding:12px}}
+@media(max-width:600px){
+  th,td{padding:8px 6px;font-size:12px}
+  .container{padding:10px}
+  header.app h1{font-size:18px}
+  .summary{grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+  .card{padding:10px;border-radius:10px}
+  .card .label{font-size:10px;letter-spacing:.4px}
+  .card .value{font-size:18px;margin-top:4px}
+  .panel{padding:12px;margin-bottom:12px;border-radius:10px}
+  .panel h2{font-size:14px;margin-bottom:10px}
+  .panel h2 small{display:block;margin-left:0;margin-top:2px;font-size:11px}
+  .tab{padding:8px 12px;font-size:13px}
+  .charts-grid{grid-template-columns:1fr;gap:10px}
+  .chart-box{min-height:230px;padding:10px}
+  .chart-box h3{font-size:13px;margin-bottom:4px}
+  .chart-box .chart-area{min-height:180px}
+  .chart-box.wide{min-height:260px}
+  .chart-box.wide .chart-area{min-height:210px}
+  .form-grid,.form-grid.fixed{grid-template-columns:1fr 1fr;gap:8px}
+  label.field{font-size:11px}
+  input,select,button{font-size:13px}
+  button{padding:7px 12px}
+  button.small{padding:3px 8px;font-size:11px}
+  .realtime-bar{font-size:11px;padding:5px 10px;gap:6px}
+  .top-actions{gap:6px}
+  .top-actions button{padding:6px 10px;font-size:12px}
+}
+@media(max-width:380px){
+  .summary{grid-template-columns:1fr}
+  .form-grid,.form-grid.fixed{grid-template-columns:1fr}
+  .chart-box{min-height:200px}
+  .chart-box .chart-area{min-height:160px}
+}
 </style>
 <meta name="theme-color" content="#0f1419">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -808,7 +840,7 @@ function renderChartSetorFiltrado(canvasId,chartKey,principalAlvo){
   charts[chartKey]=new Chart(canvas,{
     type:'doughnut',
     data:{labels,datasets:[{data:labels.map(k=>bS[k]),backgroundColor:PALETTE,borderColor:'#171d26',borderWidth:2}]},
-    options:{color:'#ffffff',plugins:{legend:{position:'right',align:'center',labels:{color:'#ffffff',font:{size:14,weight:'500'},padding:16,boxWidth:18,boxHeight:18,generateLabels:gerarLegendaPct}},tooltip:{callbacks:{label:tooltipPct}}},maintainAspectRatio:false}
+    options:{color:'#ffffff',plugins:{legend:{position:(window.innerWidth<=600?'bottom':'right'),align:'center',labels:{color:'#ffffff',font:{size:(window.innerWidth<=600?11:14),weight:'500'},padding:(window.innerWidth<=600?8:16),boxWidth:(window.innerWidth<=600?12:18),boxHeight:(window.innerWidth<=600?12:18),generateLabels:gerarLegendaPct}},tooltip:{callbacks:{label:tooltipPct}}},maintainAspectRatio:false}
   });
 }
 renderChartSetorFiltrado('chartSetorBR','setorBR','Renda Variavel Nacional');
@@ -1117,35 +1149,4 @@ if(state.rv.length>0)document.getElementById('rvLive').innerHTML='<span class="m
 iniciarCountdown();
 iniciarAutoUpdate();
 if(state.rf.length>0)setTimeout(()=>{carregarHistoricoBCB().then(ok=>{if(ok>0){renderRF();renderResumo()}})},500);
-setTimeout(()=>{fetchCotacoesMoeda().then(ok=>{if(ok){renderTudo()}})},300);
-atualizarLabelMoeda();
-setInterval(()=>{if(document.getElementById('tab-rf').classList.contains('active')||document.getElementById('tab-dash').classList.contains('active')){renderRF();renderResumo()}},60000);
-
-// ====== PWA Install Prompt ======
-let _deferredPrompt=null;
-window.addEventListener('beforeinstallprompt',(e)=>{
-  e.preventDefault();
-  _deferredPrompt=e;
-  const btn=document.getElementById('btnInstalar');
-  if(btn){btn.style.display='inline-block';}
-  const msg=document.getElementById('msgInstall');
-  if(msg)msg.innerHTML=' <span style="color:var(--green)">App pronto para instalar.</span>';
-});
-async function instalarPWA(){
-  if(!_deferredPrompt){toast('Use o menu do navegador: Compartilhar > Adicionar a tela inicial.','error');return}
-  _deferredPrompt.prompt();
-  const r=await _deferredPrompt.userChoice;
-  if(r.outcome==='accepted'){toast('App instalado!')}
-  _deferredPrompt=null;
-  const btn=document.getElementById('btnInstalar');if(btn)btn.style.display='none';
-}
-window.addEventListener('appinstalled',()=>{toast('App instalado com sucesso!')});
-
-// Detect if running as installed PWA
-if(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches){
-  const msg=document.getElementById('msgInstall');
-  if(msg)msg.innerHTML=' <span class="badge-live">rodando como app instalado</span>';
-}
-</script>
-</body>
-</html>
+setTim
