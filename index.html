@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Carteira de Investimentos</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{--bg:#0f1419;--panel:#171d26;--panel-2:#1f2733;--border:#2a3340;--text:#e8edf3;--muted:#8a95a5;--accent:#4f8cff;--accent-2:#7aa8ff;--green:#22c55e;--red:#ef4444;--yellow:#f59e0b;--purple:#a855f7;--teal:#14b8a6;--pink:#ec4899}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;font-size:14px}
+a{color:var(--accent)}
+.container{max-width:1400px;margin:0 auto;padding:18px}
+header.app{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+header.app h1{font-size:22px;margin:0;font-weight:600}
+header.app h1 span{color:var(--accent)}
+.top-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:18px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px}
+.card .label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
+.card .value{font-size:24px;font-weight:700;margin-top:6px}
+.card.green .value{color:var(--green)}
+.card.red .value{color:var(--red)}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:18px;flex-wrap:wrap}
+.tab{padding:10px 16px;cursor:pointer;border:none;background:transparent;color:var(--muted);font-weight:500;font-size:14px;border-bottom:2px solid transparent;transition:all .15s}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab-content{display:none}
+.tab-content.active{display:block}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:18px}
+.panel h2{margin:0 0 14px;font-size:16px;font-weight:600}
+.panel h2 small{color:var(--muted);font-weight:400;font-size:12px;margin-left:8px}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.form-grid.fixed{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+label.field{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted)}
+input,select,button{font-family:inherit;font-size:14px}
+input,select{background:var(--panel-2);border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:8px;outline:none}
+input:focus,select:focus{border-color:var(--accent)}
+button{cursor:pointer;background:var(--accent);color:white;border:none;padding:8px 16px;border-radius:8px;font-weight:500;transition:opacity .15s}
+button:hover{opacity:.9}
+button.ghost{background:transparent;color:var(--text);border:1px solid var(--border)}
+button.ghost:hover{background:var(--panel-2)}
+button.danger{background:var(--red)}
+button.small{padding:4px 10px;font-size:12px}
+.form-actions{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap}
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:10px 8px;text-align:right;border-bottom:1px solid var(--border);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{color:var(--muted);font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:.4px;background:var(--panel-2);position:sticky;top:0}
+tr:hover td{background:rgba(255,255,255,0.02)}
+td.green{color:var(--green)}td.red{color:var(--red)}td.muted{color:var(--muted)}
+.tag{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:500}
+.tag.acoes{background:rgba(79,140,255,.15);color:var(--accent-2)}
+.tag.fii{background:rgba(20,184,166,.15);color:var(--teal)}
+.tag.intl{background:rgba(168,85,247,.15);color:var(--purple)}
+.tag.cripto{background:rgba(245,158,11,.15);color:var(--yellow)}
+.tag.rf{background:rgba(34,197,94,.15);color:var(--green)}
+.row-actions{display:flex;gap:6px;justify-content:flex-end}
+.charts-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px}
+.chart-box{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px;min-height:320px;display:flex;flex-direction:column}
+.chart-box h3{margin:0 0 8px;font-size:14px;font-weight:600;color:var(--text)}
+.chart-box .chart-area{flex:1;position:relative;min-height:260px}
+.chart-box.wide{grid-column:1 / -1;min-height:420px}
+.chart-box.wide .chart-area{min-height:360px}
+.chart-box.wide h3{font-size:15px}
+.alloc-cell{display:flex;align-items:center;gap:8px;justify-content:flex-end}
+.progress{flex:1;max-width:120px;height:6px;background:var(--panel-2);border-radius:4px;overflow:hidden}
+.progress > div{height:100%;background:var(--accent)}
+.toast{position:fixed;bottom:20px;right:20px;background:var(--panel);border:1px solid var(--border);padding:12px 16px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.4);transform:translateX(420px);transition:transform .25s;z-index:1000}
+.toast.show{transform:translateX(0)}
+.toast.success{border-color:var(--green)}.toast.error{border-color:var(--red)}
+.rates{display:flex;gap:12px;flex-wrap:wrap;align-items:end}
+.rates label{min-width:120px}
+.small-text{font-size:11px;color:var(--muted);margin-top:4px}
+.badge-live{display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--green)}
+.badge-live::before{content:"";width:6px;height:6px;background:var(--green);border-radius:50%;display:inline-block;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+details{background:var(--panel-2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:10px}
+details summary{cursor:pointer;color:var(--muted);font-size:13px}
+details[open] summary{color:var(--text);margin-bottom:8px}
+.realtime-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--muted);background:var(--panel-2);border:1px solid var(--border);border-radius:8px;padding:6px 12px;margin-bottom:14px}
+.realtime-bar .rt-item{display:flex;align-items:center;gap:5px}
+.realtime-bar .rt-sep{color:var(--border);user-select:none}
+.rt-countdown{font-weight:600;color:var(--accent);font-variant-numeric:tabular-nums}
+.rt-hora{color:var(--text);font-weight:600}
+.spinner{display:inline-block;width:12px;height:12px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+.auto-toggle{display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none}
+.auto-toggle input[type=checkbox]{accent-color:var(--accent);width:14px;height:14px;cursor:pointer}
+@media(max-width:600px){th,td{padding:8px 6px;font-size:12px}.container{padding:12px}}
+</style>
+<meta name="theme-color" content="#0f1419">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Carteira">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjogIkNhcnRlaXJhIGRlIEludmVzdGltZW50b3MiLCAic2hvcnRfbmFtZSI6ICJDYXJ0ZWlyYSIsICJkZXNjcmlwdGlvbiI6ICJBY29tcGFuaGUgc3VhIGNhcnRlaXJhIGRlIGludmVzdGltZW50b3MgZW0gdGVtcG8gcmVhbCIsICJzdGFydF91cmwiOiAiLi9jYXJ0ZWlyYS1pbnZlc3RpbWVudG9zLmh0bWwiLCAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwgImJhY2tncm91bmRfY29sb3IiOiAiIzBmMTQxOSIsICJ0aGVtZV9jb2xvciI6ICIjMGYxNDE5IiwgIm9yaWVudGF0aW9uIjogInBvcnRyYWl0IiwgImljb25zIjogW3sic3JjIjogImRhdGE6aW1hZ2Uvc3ZnK3htbDtiYXNlNjQsUEhOMlp5QjJhV1YzUW05NFBTSXdJREFnTlRFeUlEVXhNaUlnZUcxc2JuTTlJbWgwZEhBNkx5OTNkM2N1ZHpNdWIzSm5Mekl3TURBdmMzWm5JajQ4Y21WamRDQjNhV1IwYUQwaU5URXlJaUJvWldsbmFIUTlJalV4TWlJZ1ptbHNiRDBpSXpCbU1UUXhPU0lnY25nOUlqazJJaTgrUEdOcGNtTnNaU0JqZUQwaU1qVTJJaUJqZVQwaU1qVTJJaUJ5UFNJeE9EQWlJR1pwYkd3OUltNXZibVVpSUhOMGNtOXJaVDBpSXpSbU9HTm1aaUlnYzNSeWIydGxMWGRwWkhSb1BTSXhOQ0l2UGp4MFpYaDBJSGc5SWpVd0pTSWdlVDBpTlRBbElpQm1iMjUwTFdaaGJXbHNlVDBpTFdGd2NHeGxMWE41YzNSbGJTeFRaV2R2WlNCVlNTeFNiMkp2ZEc4c2MyRnVjeTF6WlhKcFppSWdabTl1ZEMxemFYcGxQU0l5TWpBaUlHWnBiR3c5SWlNMFpqaGpabVlpSUhSbGVIUXRZVzVqYUc5eVBTSnRhV1JrYkdVaUlHUnZiV2x1WVc1MExXSmhjMlZzYVc1bFBTSmpaVzUwY21Gc0lpQm1iMjUwTFhkbGFXZG9kRDBpTnpBd0lqNVNKRHd2ZEdWNGRENDhMM04yWno0PSIsICJzaXplcyI6ICIxOTJ4MTkyIiwgInR5cGUiOiAiaW1hZ2Uvc3ZnK3htbCIsICJwdXJwb3NlIjogImFueSJ9LCB7InNyYyI6ICJkYXRhOmltYWdlL3N2Zyt4bWw7YmFzZTY0LFBITjJaeUIyYVdWM1FtOTRQU0l3SURBZ05URXlJRFV4TWlJZ2VHMXNibk05SW1oMGRIQTZMeTkzZDNjdWR6TXViM0puTHpJd01EQXZjM1puSWo0OGNtVmpkQ0IzYVdSMGFEMGlOVEV5SWlCb1pXbG5hSFE5SWpVeE1pSWdabWxzYkQwaUl6Qm1NVFF4T1NJZ2NuZzlJamsySWk4K1BHTnBjbU5zWlNCamVEMGlNalUySWlCamVUMGlNalUySWlCeVBTSXhPREFpSUdacGJHdzlJbTV2Ym1VaUlITjBjbTlyWlQwaUl6Um1PR05tWmlJZ2MzUnliMnRsTFhkcFpIUm9QU0l4TkNJdlBqeDBaWGgwSUhnOUlqVXdKU0lnZVQwaU5UQWxJaUJtYjI1MExXWmhiV2xzZVQwaUxXRndjR3hsTFhONWMzUmxiU3hUWldkdlpTQlZTU3hTYjJKdmRHOHNjMkZ1Y3kxelpYSnBaaUlnWm05dWRDMXphWHBsUFNJeU1qQWlJR1pwYkd3OUlpTTBaamhqWm1ZaUlIUmxlSFF0WVc1amFHOXlQU0p0YVdSa2JHVWlJR1J2YldsdVlXNTBMV0poYzJWc2FXNWxQU0pqWlc1MGNtRnNJaUJtYjI1MExYZGxhV2RvZEQwaU56QXdJajVTSkR3dmRHVjRkRDQ4TDNOMlp6ND0iLCAic2l6ZXMiOiAiNTEyeDUxMiIsICJ0eXBlIjogImltYWdlL3N2Zyt4bWwiLCAicHVycG9zZSI6ICJhbnkifSwgeyJzcmMiOiAiZGF0YTppbWFnZS9zdmcreG1sO2Jhc2U2NCxQSE4yWnlCMmFXVjNRbTk0UFNJd0lEQWdOVEV5SURVeE1pSWdlRzFzYm5NOUltaDBkSEE2THk5M2QzY3Vkek11YjNKbkx6SXdNREF2YzNabklqNDhjbVZqZENCM2FXUjBhRDBpTlRFeUlpQm9aV2xuYUhROUlqVXhNaUlnWm1sc2JEMGlJekJtTVRReE9TSWdjbmc5SWprMklpOCtQR05wY21Oc1pTQmplRDBpTWpVMklpQmplVDBpTWpVMklpQnlQU0l4T0RBaUlHWnBiR3c5SW01dmJtVWlJSE4wY205clpUMGlJelJtT0dObVppSWdjM1J5YjJ0bExYZHBaSFJvUFNJeE5DSXZQangwWlhoMElIZzlJalV3SlNJZ2VUMGlOVEFsSWlCbWIyNTBMV1poYldsc2VUMGlMV0Z3Y0d4bExYTjVjM1JsYlN4VFpXZHZaU0JWU1N4U2IySnZkRzhzYzJGdWN5MXpaWEpwWmlJZ1ptOXVkQzF6YVhwbFBTSXlNakFpSUdacGJHdzlJaU0wWmpoalptWWlJSFJsZUhRdFlXNWphRzl5UFNKdGFXUmtiR1VpSUdSdmJXbHVZVzUwTFdKaGMyVnNhVzVsUFNKalpXNTBjbUZzSWlCbWIyNTBMWGRsYVdkb2REMGlOekF3SWo1U0pEd3ZkR1Y0ZEQ0OEwzTjJaejQ9IiwgInNpemVzIjogImFueSIsICJ0eXBlIjogImltYWdlL3N2Zyt4bWwiLCAicHVycG9zZSI6ICJtYXNrYWJsZSJ9XX0=">
+<link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgNTEyIDUxMiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgZmlsbD0iIzBmMTQxOSIgcng9Ijk2Ii8+PGNpcmNsZSBjeD0iMjU2IiBjeT0iMjU2IiByPSIxODAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzRmOGNmZiIgc3Ryb2tlLXdpZHRoPSIxNCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iLWFwcGxlLXN5c3RlbSxTZWdvZSBVSSxSb2JvdG8sc2Fucy1zZXJpZiIgZm9udC1zaXplPSIyMjAiIGZpbGw9IiM0ZjhjZmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGRvbWluYW50LWJhc2VsaW5lPSJjZW50cmFsIiBmb250LXdlaWdodD0iNzAwIj5SJDwvdGV4dD48L3N2Zz4=">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgNTEyIDUxMiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgZmlsbD0iIzBmMTQxOSIgcng9Ijk2Ii8+PGNpcmNsZSBjeD0iMjU2IiBjeT0iMjU2IiByPSIxODAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzRmOGNmZiIgc3Ryb2tlLXdpZHRoPSIxNCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iLWFwcGxlLXN5c3RlbSxTZWdvZSBVSSxSb2JvdG8sc2Fucy1zZXJpZiIgZm9udC1zaXplPSIyMjAiIGZpbGw9IiM0ZjhjZmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGRvbWluYW50LWJhc2VsaW5lPSJjZW50cmFsIiBmb250LXdlaWdodD0iNzAwIj5SJDwvdGV4dD48L3N2Zz4=">
+</head>
+<body>
+<div class="container">
+<header class="app">
+<h1>Carteira de <span>Investimentos</span></h1>
+<div class="top-actions">
+<button class="ghost" id="btnAtualizar" onclick="atualizarCotacoes(event)">&#8635; Atualizar Cotações</button>
+<button class="ghost" onclick="exportarJSON()">&#8681; Exportar</button>
+<button class="ghost" onclick="document.getElementById('importFile').click()">&#8679; Importar</button>
+<input type="file" id="importFile" accept=".json" style="display:none" onchange="importarJSON(event)">
+</div>
+</header>
+<div class="realtime-bar" id="realtimeBar">
+<div class="rt-item"><span class="badge-live" id="rtStatus">ao vivo</span></div>
+<span class="rt-sep">|</span>
+<div class="rt-item">&#9201; Última atualização: <span class="rt-hora" id="rtUltimaAtualizacao">—</span></div>
+<span class="rt-sep">|</span>
+<div class="rt-item">Próxima em: <span class="rt-countdown" id="rtCountdown">5:00</span></div>
+<span class="rt-sep">|</span>
+<label class="auto-toggle" title="Ativar/desativar atualização automática">
+<input type="checkbox" id="rtAutoCheck" checked onchange="toggleAutoUpdate()">
+Auto-atualizar
+</label>
+</div>
+<section class="summary">
+<div class="card"><div class="label">Total Investido</div><div class="value" id="sumInvestido">R$ 0,00</div></div>
+<div class="card"><div class="label">Valor Atual</div><div class="value" id="sumAtual">R$ 0,00</div></div>
+<div class="card" id="sumLPCard"><div class="label">Lucro / Prejuízo</div><div class="value" id="sumLP">R$ 0,00</div></div>
+<div class="card" id="sumRentCard"><div class="label">Rentabilidade</div><div class="value" id="sumRent">0,00%</div></div>
+</section>
+<div class="tabs">
+<button class="tab active" data-tab="rv">Renda Variável</button>
+<button class="tab" data-tab="rf">Renda Fixa</button>
+<button class="tab" data-tab="dash">Dashboard</button>
+<button class="tab" data-tab="config">Configurações</button>
+</div>
+<div class="tab-content active" id="tab-rv">
+<div class="panel">
+<h2>Adicionar / Editar Ativo de Renda Variável <small id="rvLive"></small></h2>
+<form id="formRV" onsubmit="salvarRV(event)">
+<input type="hidden" id="rvId">
+<div class="form-grid">
+<label class="field">Ticker <input type="text" id="rvTicker" required placeholder="WEGE3" style="text-transform:uppercase"></label>
+<label class="field">Classe <select id="rvClasse" required></select></label>
+<label class="field">Setor <input type="text" id="rvSetor" placeholder="Tecnologia"></label>
+<label class="field">Quantidade <input type="number" step="any" id="rvQtd" required placeholder="0"></label>
+<label class="field"><span id="lblPrecoMedio">Preço Médio (R$)</span> <input type="number" step="any" id="rvPrecoMedio" required placeholder="0,00"></label>
+<label class="field">Indexador (renda fixa) <select id="rvIndexador">
+<option value="">— (n/a)</option>
+<option value="PRE">Prefixado</option>
+<option value="CDI">Pos-fixado (CDI/Selic)</option>
+<option value="IPCA">IPCA+</option>
+<option value="MISTO">Misto / Hibrido</option>
+</select></label>
+<label class="field">Moeda <select id="rvMoeda" onchange="atualizarLabelMoeda()">
+<option value="BRL">BRL - Real</option>
+<option value="USD">USD - Dolar</option>
+<option value="EUR">EUR - Euro</option>
+<option value="GBP">GBP - Libra</option>
+<option value="CAD">CAD - Dolar CA</option>
+<option value="ARS">ARS - Peso Argentino</option>
+<option value="JPY">JPY - Iene</option>
+<option value="CHF">CHF - Franco</option>
+</select></label>
+<label class="field"><span id="lblCotacao">Cotação Atual (R$)</span> <input type="number" step="any" id="rvCotacao" placeholder="auto"></label>
+</div>
+<div class="form-actions">
+<button type="submit">Salvar Ativo</button>
+<button type="button" class="ghost" onclick="limparFormRV()">Limpar</button>
+</div>
+</form>
+</div>
+<div class="panel">
+<h2>Meus Ativos de Renda Variável</h2>
+<div class="table-wrap"><table id="tabelaRV"><thead><tr>
+<th>Ticker</th><th>Classe</th><th>Moeda</th><th>Setor</th><th>Qtd</th><th>Preço Médio</th><th>Cotação</th>
+<th>Investido (R$)</th><th>Valor Atual (R$)</th><th>L/P (R$)</th><th>L/P (%)</th><th>% Carteira</th><th></th>
+</tr></thead><tbody></tbody></table></div>
+</div>
+</div>
+<div class="tab-content" id="tab-rf">
+<div class="panel">
+<h2>Adicionar / Editar Investimento de Renda Fixa <span class="badge-live">tempo real</span></h2>
+<form id="formRF" onsubmit="salvarRF(event)">
+<input type="hidden" id="rfId">
+<div class="form-grid fixed">
+<label class="field">Nome / Descrição <input type="text" id="rfNome" required placeholder="CDB Banco X"></label>
+<label class="field">Tipo <select id="rfTipo" required onchange="atualizarLabelsRF()">
+<option value="CDI">Pós-fixado (% do CDI)</option>
+<option value="PRE">Prefixado (% a.a.)</option>
+<option value="IPCA">IPCA+ (% a.a. + IPCA)</option>
+<option value="SELIC">Tesouro Selic (Selic + spread %)</option>
+</select></label>
+<label class="field">Data da Aplicação <input type="date" id="rfData" required></label>
+<label class="field">Data de Vencimento <input type="date" id="rfVencimento"></label>
+<label class="field">Liquidez <select id="rfLiquidez">
+<option value="VENCIMENTO">No vencimento</option>
+<option value="DIARIA">Diaria (D+0 / D+1)</option>
+</select></label>
+<label class="field">Valor Aplicado (R$) <input type="number" step="any" id="rfValor" required placeholder="0,00"></label>
+<label class="field" id="rfLblTaxa">Taxa / Indexador <input type="number" step="any" id="rfTaxa" required placeholder="100"></label>
+</div>
+<div class="form-actions">
+<button type="submit">Salvar Aplicação</button>
+<button type="button" class="ghost" onclick="limparFormRF()">Limpar</button>
+</div>
+<div class="small-text">Pós-fixado: % do CDI (ex.: 100). Prefixado: taxa anual (ex.: 12). IPCA+: cupom anual (ex.: 6). Selic: spread (ex.: 0).</div>
+</form>
+</div>
+<div class="panel">
+<h2>Minhas Aplicações de Renda Fixa <small id="rfRatesInfo"></small> <small id="rfPrecisao" style="margin-left:6px"></small></h2>
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+<button class="ghost" onclick="atualizarHistoricoBCB(event)">↻ Atualizar com BCB (cálculo preciso)</button>
+<button class="ghost" onclick="abrirTesouroDireto()">Buscar Tesouro Direto</button>
+</div>
+<div class="table-wrap"><table id="tabelaRF"><thead><tr>
+<th>Aplicação</th><th>Tipo</th><th>Data</th><th>Vencimento</th><th>Dias</th>
+<th>Aplicado</th><th>Valor Atual</th><th>Rendimento (R$)</th><th>Rend. (%)</th><th></th>
+</tr></thead><tbody></tbody></table></div>
+</div>
+</div>
+<div class="tab-content" id="tab-dash">
+<div class="charts-grid">
+<div class="chart-box"><h3>Distribuição por Classe Principal</h3><div class="chart-area"><canvas id="chartClasse"></canvas></div></div>
+<div class="chart-box"><h3>Distribuição da Renda Fixa por Indexador</h3><div class="chart-area"><canvas id="chartRF"></canvas></div></div>
+<div class="chart-box"><h3>Liquidez da Renda Fixa</h3><div class="chart-area"><canvas id="chartLiquidez"></canvas></div></div>
+<div class="chart-box"><h3>Ativos por % da Renda Variável</h3><div class="chart-area"><canvas id="chartTop"></canvas></div></div>
+<div class="chart-box wide"><h3>Distribuição por Setor — Renda Variável Nacional</h3><div class="chart-area"><canvas id="chartSetorBR"></canvas></div></div>
+<div class="chart-box wide"><h3>Distribuição por Setor — Renda Variável Internacional</h3><div class="chart-area"><canvas id="chartSetorINTL"></canvas></div></div>
+<div class="chart-box wide"><h3>Lucro / Prejuízo por Ativo</h3><div class="chart-area"><canvas id="chartLP"></canvas></div></div>
+</div>
+<div class="panel" style="margin-top:18px">
+<h2>Alocação Atual vs Ideal</h2>
+<div class="table-wrap"><table id="tabelaAlloc"><thead><tr>
+<th>Classe</th><th>Atual %</th><th>Ideal %</th><th>Desvio</th><th>Ação Sugerida</th>
+</tr></thead><tbody></tbody></table></div>
+<div class="small-text">Defina suas metas na aba <b>Configurações</b>.</div>
+</div>
+<div class="panel" style="margin-top:18px">
+<h2>Alocação por Setor — Renda Variável Nacional <small>(atual vs ideal)</small></h2>
+<div class="table-wrap"><table id="tabelaAllocSetorBR"><thead><tr>
+<th>Setor</th><th>Atual %</th><th>Ideal %</th><th>Desvio</th><th>Ação Sugerida</th>
+</tr></thead><tbody></tbody></table></div>
+<div class="small-text">% calculado sobre o total da Renda Variável Nacional. Configure os setores ideais na aba <b>Configurações</b>.</div>
+</div>
+<div class="panel" style="margin-top:18px">
+<h2>Alocação por Setor — Renda Variável Internacional <small>(atual vs ideal)</small></h2>
+<div class="table-wrap"><table id="tabelaAllocSetorINTL"><thead><tr>
+<th>Setor</th><th>Atual %</th><th>Ideal %</th><th>Desvio</th><th>Ação Sugerida</th>
+</tr></thead><tbody></tbody></table></div>
+<div class="small-text">% calculado sobre o total da Renda Variável Internacional.</div>
+</div>
+</div>
+<div class="tab-content" id="tab-config">
+<div class="panel">
+<h2>Token Brapi.dev <small>(opcional)</small></h2>
+<div style="display:flex;gap:8px;align-items:end;flex-wrap:wrap">
+<label class="field" style="flex:1;min-width:260px">Token gratuito
+<input type="text" id="cfgBrapiToken" placeholder="cole seu token aqui" onchange="salvarConfig()">
+</label>
+<a href="https://brapi.dev/dashboard" target="_blank" rel="noopener"><button class="ghost" type="button">Obter token</button></a>
+</div>
+<div class="small-text">A Brapi.dev oferece plano gratuito (1500 req/mês).</div>
+</div>
+<div class="panel">
+<h2>Intervalo de Atualização Automática</h2>
+<div style="display:flex;gap:10px;align-items:end;flex-wrap:wrap">
+<label class="field" style="min-width:180px">Intervalo (minutos)
+<select id="cfgIntervalo" onchange="salvarConfig();reiniciarAutoUpdate()">
+<option value="1">1 minuto</option>
+<option value="2">2 minutos</option>
+<option value="5">5 minutos</option>
+<option value="10">10 minutos</option>
+<option value="15">15 minutos</option>
+<option value="30">30 minutos</option>
+</select>
+</label>
+</div>
+</div>
+<div class="panel">
+<h2>Taxas Macroeconômicas</h2>
+<div class="rates">
+<label class="field">CDI (% a.a.) <input type="number" step="any" id="cfgCDI" onchange="salvarConfig()"></label>
+<label class="field">Selic (% a.a.) <input type="number" step="any" id="cfgSelic" onchange="salvarConfig()"></label>
+<label class="field">IPCA (% a.a.) <input type="number" step="any" id="cfgIPCA" onchange="salvarConfig()"></label>
+<button class="ghost" onclick="buscarTaxasBCB()">Buscar do BCB</button>
+</div>
+</div>
+<div class="panel">
+<h2>Classes Principais <small>(usadas no grafico de alocacao ideal)</small></h2>
+<form onsubmit="adicionarPrincipal(event)" style="display:flex;gap:8px;align-items:end;flex-wrap:wrap;margin-bottom:10px">
+<label class="field" style="min-width:200px">Nome da classe principal
+<input type="text" id="novaPrincipalNome" required placeholder="ex.: Imoveis">
+</label>
+<label class="field" style="min-width:140px">Cor
+<select id="novaPrincipalCor">
+<option value="acoes">Azul</option>
+<option value="intl">Roxo</option>
+<option value="cripto">Amarelo</option>
+<option value="rf">Verde</option>
+<option value="fii">Ciano</option>
+</select>
+</label>
+<button type="submit">+ Adicionar</button>
+</form>
+<div class="table-wrap"><table id="tabelaPrincipais"><thead><tr>
+<th>Nome</th><th>Cor</th><th>Subclasses</th><th>Ativos</th><th></th>
+</tr></thead><tbody></tbody></table></div>
+</div>
+<div class="panel">
+<h2>Subclasses <small>(detalhamento dentro de cada classe principal)</small></h2>
+<form onsubmit="adicionarSubclasse(event)" style="display:flex;gap:8px;align-items:end;flex-wrap:wrap;margin-bottom:10px">
+<label class="field" style="min-width:180px">Nome da subclasse
+<input type="text" id="novaSubNome" required placeholder="ex.: ETF Renda Fixa">
+</label>
+<label class="field" style="min-width:180px">Classe Principal
+<select id="novaSubPrincipal" required></select>
+</label>
+<label class="field" style="min-width:160px">Tipo de cotacao
+<select id="novaSubTipo" required>
+<option value="BR">B3 (Yahoo .SA / Brapi)</option>
+<option value="INTL">Internacional (Yahoo)</option>
+<option value="CRYPTO">Cripto (CoinGecko)</option>
+<option value="RF">Renda Fixa (manual)</option>
+</select>
+</label>
+<button type="submit">+ Adicionar</button>
+</form>
+<div class="table-wrap"><table id="tabelaSubclasses"><thead><tr>
+<th>Subclasse</th><th>Classe Principal</th><th>Tipo</th><th>Em uso</th><th></th>
+</tr></thead><tbody></tbody></table></div>
+<div class="small-text">Subclasses em uso (com ativos cadastrados) nao podem ser removidas.</div>
+</div>
+<div class="panel">
+<h2>Alocação Ideal por Classe (%)</h2>
+<div class="form-grid fixed" id="metasGrid"></div>
+</div>
+<div class="panel">
+<h2>Alocação Ideal por Setor <small>(comparação atual vs ideal por setor)</small></h2>
+<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+<button type="button" class="small" id="btnSetTabBR" onclick="setSetorTab('BR')">Renda Variável Nacional</button>
+<button type="button" class="small ghost" id="btnSetTabINTL" onclick="setSetorTab('INTL')">Renda Variável Internacional</button>
+</div>
+<form onsubmit="adicionarSetorIdeal(event)" style="display:flex;gap:8px;align-items:end;flex-wrap:wrap;margin-bottom:10px">
+<label class="field" style="min-width:200px">Setor
+<input type="text" id="novoSetorNome" required placeholder="ex.: Tecnologia">
+</label>
+<label class="field" style="min-width:120px">% Ideal da carteira
+<input type="number" step="any" id="novoSetorPct" required placeholder="ex.: 25">
+</label>
+<button type="submit">+ Adicionar</button>
+</form>
+<div class="table-wrap"><table id="tabelaSetoresIdeais"><thead><tr>
+<th>Setor</th><th>% Ideal</th><th></th>
+</tr></thead><tbody></tbody></table></div>
+<div class="small-text">O % é calculado em relação ao total do escopo selecionado (Nacional ou Internacional). A soma dos % ideais deve totalizar 100% dentro do escopo.</div>
+</div>
+<div class="panel" id="painelMobile">
+<h2>Usar no Celular <small>(instalar como aplicativo)</small></h2>
+<div id="instrInstall"><div class="small-text" style="margin-bottom:8px;line-height:1.6">Para usar esta carteira no seu celular como um app:</div>
+<details open><summary><b>1. Hospede o arquivo online (gratis, 30 segundos)</b></summary><div class="small-text" style="line-height:1.7;margin-top:6px">Acesse <a href="https://app.netlify.com/drop" target="_blank">app.netlify.com/drop</a> no PC e arraste o arquivo <code>carteira-investimentos.html</code>. Vai gerar um link tipo <code>https://nome-aleatorio.netlify.app</code>. Anote esse link.</div></details>
+<details><summary><b>2. Instale no celular</b></summary><div class="small-text" style="line-height:1.7;margin-top:6px"><b>iPhone (Safari):</b> abra o link &rarr; toque no botao Compartilhar (quadrado com seta) &rarr; "Adicionar a Tela de Inicio".<br><br><b>Android (Chrome):</b> abra o link &rarr; toque no menu (3 pontos) &rarr; "Instalar app" ou "Adicionar a tela inicial".</div></details>
+<details><summary><b>3. Pronto, abre como app</b></summary><div class="small-text" style="line-height:1.7;margin-top:6px">O icone aparece na tela inicial. Ao tocar, abre em tela cheia (sem barra do navegador), igual um app nativo. Funciona em qualquer celular.</div></details>
+<div style="margin-top:14px"><button id="btnInstalar" style="display:none" onclick="instalarPWA()">Instalar Aplicativo Agora</button>
+<span id="msgInstall" class="small-text"></span>
+</div>
+<div class="small-text" style="margin-top:14px;padding:10px;background:var(--panel-2);border-radius:6px;border-left:3px solid var(--accent)"><b>Sincronizacao entre dispositivos:</b> os dados ficam salvos por dispositivo (localStorage). Para levar a carteira do PC para o celular, use os botoes <b>Exportar JSON</b> (no PC) e <b>Importar JSON</b> (no celular). Envie o arquivo .json por WhatsApp/Drive/email.</div>
+</div></div>
+<div class="panel">
+<h2>Dados</h2>
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<button class="ghost" onclick="exportarJSON()">Exportar JSON</button>
+<button class="ghost" onclick="document.getElementById('importFile2').click()">Importar JSON</button>
+<input type="file" id="importFile2" accept=".json" style="display:none" onchange="importarJSON(event)">
+<button class="danger" onclick="resetarTudo()">Apagar Tudo</button>
+</div>
+</div>
+</div>
+<div class="toast" id="toast"></div>
+<div id="tesouroModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:999;align-items:flex-start;justify-content:center;padding:30px;overflow:auto">
+<div style="background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px;max-width:900px;width:100%">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+<h2 style="margin:0;font-size:18px">Títulos Públicos Disponíveis (Tesouro Direto)</h2>
+<button class="ghost small" onclick="fecharTesouro()">Fechar</button>
+</div>
+<div id="tesouroContent" style="font-size:13px"><div class="muted" style="text-align:center;padding:20px">Buscando títulos no B3...</div></div>
+<div class="small-text" style="margin-top:10px">Fonte: API pública do Tesouro Direto / B3. Os títulos listados estão disponíveis para compra com as taxas vigentes.</div>
+</div>
+</div>
+</div>
+<script>
+const STORE_KEY='carteiraInv_v1';
+const PRINCIPAIS_PADRAO=[
+  {nome:'Renda Variavel Nacional',cor:'acoes'},
+  {nome:'Renda Variavel Internacional',cor:'intl'},
+  {nome:'Cripto',cor:'cripto'},
+  {nome:'Renda Fixa',cor:'rf'}
+];
+const SUBCLASSES_PADRAO=[
+  {nome:'Acoes Nacionais',tipo:'BR',principal:'Renda Variavel Nacional'},
+  {nome:'FII',tipo:'BR',principal:'Renda Variavel Nacional'},
+  {nome:'ETF Nacional',tipo:'BR',principal:'Renda Variavel Nacional'},
+  {nome:'Acoes Internacionais',tipo:'INTL',principal:'Renda Variavel Internacional'},
+  {nome:'ETF Internacional',tipo:'INTL',principal:'Renda Variavel Internacional'},
+  {nome:'Cripto',tipo:'CRYPTO',principal:'Cripto'}
+];
+const DEFAULTS={rv:[],rf:[],config:{cdi:14.65,selic:14.75,ipca:4.00,brapiToken:'',intervaloMin:5,classesPrincipais:PRINCIPAIS_PADRAO.slice(),subclasses:SUBCLASSES_PADRAO.slice(),metasPrincipais:{'Renda Variavel Nacional':40,'Renda Variavel Internacional':20,'Cripto':10,'Renda Fixa':30},setoresIdeaisBR:{},setoresIdeaisINTL:{}}};
+let state=carregarState();
+function carregarState(){
+  try{
+    const r=localStorage.getItem(STORE_KEY);
+    if(!r)return JSON.parse(JSON.stringify(DEFAULTS));
+    const p=JSON.parse(r);
+    const cfg=Object.assign(JSON.parse(JSON.stringify(DEFAULTS.config)),p.config||{});
+    if(!cfg.classesPrincipais||!cfg.classesPrincipais.length)cfg.classesPrincipais=PRINCIPAIS_PADRAO.slice();
+    if(!cfg.subclasses||!cfg.subclasses.length){
+      if(p.config&&Array.isArray(p.config.classes)){
+        const mapTipoPrincipal={BR:'Renda Variavel Nacional',INTL:'Renda Variavel Internacional',CRYPTO:'Cripto',RF:'Renda Fixa'};
+        cfg.subclasses=p.config.classes.map(c=>({nome:c.nome,tipo:c.tipo,principal:mapTipoPrincipal[c.tipo]||'Renda Variavel Nacional'}));
+      } else {
+        cfg.subclasses=SUBCLASSES_PADRAO.slice();
+      }
+    }
+    if(!cfg.metasPrincipais){
+      cfg.metasPrincipais={'Renda Variavel Nacional':40,'Renda Variavel Internacional':20,'Cripto':10,'Renda Fixa':30};
+    }
+    if(!cfg.setoresIdeaisBR||typeof cfg.setoresIdeaisBR!=='object')cfg.setoresIdeaisBR={};
+    if(!cfg.setoresIdeaisINTL||typeof cfg.setoresIdeaisINTL!=='object')cfg.setoresIdeaisINTL={};
+    return{rv:p.rv||[],rf:p.rf||[],config:cfg};
+  }catch(e){return JSON.parse(JSON.stringify(DEFAULTS))}
+}
+function salvarState(){localStorage.setItem(STORE_KEY,JSON.stringify(state))}
+const fmtBRL=v=>(v==null||isNaN(v))?'-':v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const fmtPct=v=>(v==null||isNaN(v))?'-':(v*100).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'%';
+const fmtNum=(v,d)=>(v==null||isNaN(v))?'-':v.toLocaleString('pt-BR',{minimumFractionDigits:d||2,maximumFractionDigits:d||2});
+function uid(){return Math.random().toString(36).slice(2,10)+Date.now().toString(36)}
+function diasEntre(d1,d2){const ms=new Date(d2).getTime()-new Date(d1).getTime();return Math.max(0,Math.floor(ms/(1000*60*60*24)))}
+function diasUteis(d1,d2){return Math.round(diasEntre(d1,d2)*252/365)}
+function toast(msg,type){const el=document.getElementById('toast');el.textContent=msg;el.className='toast show '+(type||'success');setTimeout(()=>el.className='toast '+(type||'success'),2500)}
+document.querySelectorAll('.tab').forEach(t=>{t.addEventListener('click',()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.tab-content').forEach(x=>x.classList.remove('active'));t.classList.add('active');document.getElementById('tab-'+t.dataset.tab).classList.add('active');if(t.dataset.tab==='dash')renderDashboard()})});
+
+let _autoTimer=null,_countdownTimer=null,_segundosRestantes=0,_autoAtivo=true;
+function formatarHora(d){return d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}
+function atualizarBarraStatus(at){const el=document.getElementById('rtStatus');if(at){el.innerHTML='<span class="spinner"></span> atualizando...';el.style.color='var(--yellow)'}else{el.innerHTML='ao vivo';el.style.color=''}}
+function atualizarCountdownDisplay(){const el=document.getElementById('rtCountdown');if(!_autoAtivo){el.textContent='pausado';return}const m=Math.floor(_segundosRestantes/60),s=_segundosRestantes%60;el.textContent=m+':'+(s<10?'0':'')+s}
+function iniciarCountdown(){if(_countdownTimer)clearInterval(_countdownTimer);const sec=(state.config.intervaloMin||5)*60;_segundosRestantes=sec;atualizarCountdownDisplay();_countdownTimer=setInterval(()=>{if(!_autoAtivo){atualizarCountdownDisplay();return}_segundosRestantes--;if(_segundosRestantes<0)_segundosRestantes=sec;atualizarCountdownDisplay()},1000)}
+function iniciarAutoUpdate(){if(_autoTimer)clearInterval(_autoTimer);const ms=(state.config.intervaloMin||5)*60*1000;_autoTimer=setInterval(async()=>{if(!_autoAtivo)return;if(state.rv.length===0)return;await atualizarCotacoesAuto();_segundosRestantes=(state.config.intervaloMin||5)*60},ms)}
+function reiniciarAutoUpdate(){iniciarCountdown();iniciarAutoUpdate()}
+function toggleAutoUpdate(){_autoAtivo=document.getElementById('rtAutoCheck').checked;if(_autoAtivo){reiniciarAutoUpdate();toast('Auto-atualização ativada.')}else{toast('Auto-atualização pausada.','error');atualizarCountdownDisplay()}}
+async function atualizarCotacoesAuto(){if(state.rv.length===0)return;atualizarBarraStatus(true);await fetchCotacoesMoeda();for(const a of state.rv){await fetchCotacaoAtivo(a)}renderTudo();document.getElementById('rtUltimaAtualizacao').textContent=formatarHora(new Date());atualizarBarraStatus(false)}
+
+const _cacheMoedas={BRL:1,USD:5.0,EUR:5.5,GBP:6.5,CAD:3.7,ARS:0.005,JPY:0.032,CHF:5.7};
+async function fetchCotacoesMoeda(){
+  const url='https://economia.awesomeapi.com.br/json/last/USD-BRL,EUR-BRL,GBP-BRL,CAD-BRL,ARS-BRL,JPY-BRL,CHF-BRL';
+  const tent=[url,'https://corsproxy.io/?'+encodeURIComponent(url),'https://api.allorigins.win/raw?url='+encodeURIComponent(url)];
+  for(const u of tent){try{const r=await fetch(u);if(!r.ok)continue;const j=await r.json();['USD','EUR','GBP','CAD','ARS','JPY','CHF'].forEach(m=>{const k=m+'BRL';if(j[k]&&j[k].bid)_cacheMoedas[m]=parseFloat(j[k].bid)});return true}catch(e){}}
+  return false;
+}
+function calcularRV(a){
+  const cot=a.cotacao||a.precoMedio;
+  const moeda=a.moeda||'BRL';
+  const rate=_cacheMoedas[moeda]||1;
+  const invOrig=a.qtd*a.precoMedio;
+  const atOrig=a.qtd*cot;
+  const inv=invOrig*rate;
+  const at=atOrig*rate;
+  const lp=at-inv;
+  return{investido:inv,atual:at,lp,lpPct:inv?lp/inv:0,cot,moeda,rate,invOrig,atOrig};
+}
+function atualizarLabelMoeda(){
+  const sel=document.getElementById('rvMoeda');if(!sel)return;
+  const m=sel.value||'BRL';
+  const lblPM=document.getElementById('lblPrecoMedio');
+  const lblCot=document.getElementById('lblCotacao');
+  if(lblPM)lblPM.textContent='Preço Médio ('+m+')';
+  if(lblCot)lblCot.textContent='Cotação Atual ('+m+')';
+}
+function principalDoAtivo(nomeSub){const s=(state.config.subclasses||[]).find(x=>x.nome===nomeSub);return s?s.principal:null}
+function corDoPrincipal(nomePrincipal){const p=(state.config.classesPrincipais||[]).find(x=>x.nome===nomePrincipal);return p?(p.cor||'accent'):'accent'}
+function classeTag(c){const pIfPrincipal=(state.config.classesPrincipais||[]).find(x=>x.nome===c);if(pIfPrincipal)return '<span class="tag '+(pIfPrincipal.cor||'')+'">'+c+'</span>';const principal=principalDoAtivo(c);const cor=principal?corDoPrincipal(principal):'';return '<span class="tag '+(cor||'')+'">'+c+'</span>'}
+function renderRV(){const tb=document.querySelector('#tabelaRV tbody');tb.innerHTML='';const tC=totalCarteiraGeral();state.rv.forEach(a=>{
+    const c=calcularRV(a);
+    const p=tC?c.atual/tC:0;
+    const cl=c.lp>=0?'green':'red';
+    const moedaTag=c.moeda!=='BRL'?('<span class="muted" style="font-size:10px"> @'+c.rate.toFixed(2)+'</span>'):'';
+    const fmtMoeda=(v)=>c.moeda==='BRL'?fmtBRL(v):(c.moeda+' '+v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}));
+    tb.innerHTML+='<tr><td><b>'+a.ticker+'</b></td><td>'+classeTag(a.classe)+'</td><td><b>'+c.moeda+'</b>'+moedaTag+'</td><td class="muted">'+(a.setor||'-')+'</td><td>'+fmtNum(a.qtd,a.qtd<1?6:2)+'</td><td>'+fmtMoeda(a.precoMedio)+'</td><td>'+fmtMoeda(c.cot)+'</td><td>'+fmtBRL(c.investido)+'</td><td>'+fmtBRL(c.atual)+'</td><td class="'+cl+'">'+fmtBRL(c.lp)+'</td><td class="'+cl+'">'+fmtPct(c.lpPct)+'</td><td>'+fmtPct(p)+'</td><td class="row-actions"><button class="small ghost" onclick="editarRV(\''+a.id+'\')">edit</button> <button class="small danger" onclick="removerRV(\''+a.id+'\')">x</button></td></tr>'
+  });
+  if(state.rv.length===0)tb.innerHTML='<tr><td colspan="13" class="muted" style="text-align:center;padding:20px">Nenhum ativo cadastrado.</td></tr>'}
+function salvarRV(e){e.preventDefault();const id=document.getElementById('rvId').value||uid();const a={id,ticker:document.getElementById('rvTicker').value.trim().toUpperCase(),classe:document.getElementById('rvClasse').value,setor:document.getElementById('rvSetor').value.trim(),qtd:parseFloat(document.getElementById('rvQtd').value),precoMedio:parseFloat(document.getElementById('rvPrecoMedio').value),cotacao:parseFloat(document.getElementById('rvCotacao').value)||null,moeda:document.getElementById('rvMoeda').value||'BRL',indexador:document.getElementById('rvIndexador').value||null};const i=state.rv.findIndex(x=>x.id===id);if(i>=0)state.rv[i]=a;else state.rv.push(a);salvarState();limparFormRV();renderTudo();toast('Ativo salvo.');fetchCotacaoAtivo(a).then(r=>{renderTudo();if(r&&!r.ok)console.warn('Cotação',a.ticker,r.error)})}
+function editarRV(id){const a=state.rv.find(x=>x.id===id);if(!a)return;document.getElementById('rvId').value=a.id;document.getElementById('rvTicker').value=a.ticker;document.getElementById('rvClasse').value=a.classe;document.getElementById('rvSetor').value=a.setor||'';document.getElementById('rvQtd').value=a.qtd;document.getElementById('rvPrecoMedio').value=a.precoMedio;document.getElementById('rvCotacao').value=a.cotacao||'';document.getElementById('rvMoeda').value=a.moeda||'BRL';document.getElementById('rvIndexador').value=a.indexador||'';atualizarLabelMoeda();document.querySelector('[data-tab="rv"]').click();window.scrollTo({top:0,behavior:'smooth'})}
+function removerRV(id){if(!confirm('Remover este ativo?'))return;state.rv=state.rv.filter(x=>x.id!==id);salvarState();renderTudo()}
+function limparFormRV(){document.getElementById('formRV').reset();document.getElementById('rvId').value=''}
+
+const CRYPTO_MAP={BTC:'bitcoin',ETH:'ethereum',SOL:'solana',BNB:'binancecoin',XRP:'ripple',ADA:'cardano',DOGE:'dogecoin',LTC:'litecoin',MATIC:'matic-network',DOT:'polkadot',AVAX:'avalanche-2',LINK:'chainlink',TRX:'tron',SHIB:'shiba-inu',UNI:'uniswap',ATOM:'cosmos'};
+function cryptoIdFromTicker(t){const k=t.toUpperCase().replace(/BRL$|USDT$|USD$/,'');return CRYPTO_MAP[k]||k.toLowerCase()}
+async function fetchYahoo(symbol){
+  const direto=['https://query1.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(symbol),'https://query2.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(symbol)];
+  const proxies=[u=>'https://corsproxy.io/?'+encodeURIComponent(u),u=>'https://api.allorigins.win/raw?url='+encodeURIComponent(u),u=>'https://api.codetabs.com/v1/proxy/?quest='+encodeURIComponent(u)];
+  const tentativas=[...direto];direto.forEach(u=>proxies.forEach(p=>tentativas.push(p(u))));
+  for(const u of tentativas){try{const r=await fetch(u);if(!r.ok)continue;const j=await r.json();const res=j&&j.chart&&j.chart.result&&j.chart.result[0];const p=res&&res.meta&&(res.meta.regularMarketPrice||res.meta.previousClose);if(p)return p}catch(e){}}
+  return null;
+}
+async function fetchBrapi(ticker,token){
+  const tp=token?'&token='+encodeURIComponent(token):'';
+  try{const r=await fetch('https://brapi.dev/api/quote/'+encodeURIComponent(ticker)+'?range=1d&interval=1d'+tp);
+    if(r.status===401||r.status===402||r.status===403)return{err:'TOKEN_REQ',status:r.status};
+    if(!r.ok)return{err:'HTTP '+r.status};
+    const j=await r.json();
+    if(j&&j.error)return{err:'Brapi: '+(j.message||j.error)};
+    const p=j&&j.results&&j.results[0]&&j.results[0].regularMarketPrice;
+    return p?{price:p}:{err:'sem cotação'};
+  }catch(e){return{err:'rede'}}
+}
+async function fetchCotacaoAtivo(a){
+  try{
+    const cls=(state.config.subclasses||[]).find(x=>x.nome===a.classe);
+    const tipo=cls?cls.tipo:'BR';
+    if(tipo==='RF')return{ok:false,error:'Classe "'+a.classe+'" e renda fixa - use cotacao manual'};
+    if(tipo==='CRYPTO'){
+      const id=cryptoIdFromTicker(a.ticker);
+      const direta='https://api.coingecko.com/api/v3/simple/price?ids='+id+'&vs_currencies=brl';
+      const tent=[direta,'https://corsproxy.io/?'+encodeURIComponent(direta),'https://api.allorigins.win/raw?url='+encodeURIComponent(direta)];
+      for(const u of tent){try{const r=await fetch(u);if(!r.ok)continue;const j=await r.json();const p=j[id]&&j[id].brl;if(p){a.cotacao=p;salvarState();return{ok:true,price:p}}}catch(e){}}
+      return{ok:false,error:'Cripto "'+id+'" não encontrada'};
+    }
+    const t=a.ticker.toUpperCase();
+    const ehBR=tipo==='BR';
+    const cand=ehBR?[t.endsWith('.SA')?t:(t+'.SA'),t]:[t,t+'.SA'];
+    for(const sym of cand){const p=await fetchYahoo(sym);if(p){a.cotacao=p;salvarState();return{ok:true,price:p,fonte:'Yahoo '+sym}}}
+    const tk=(state.config.brapiToken||'').trim();
+    const rb=await fetchBrapi(a.ticker,tk);
+    if(rb.price){a.cotacao=rb.price;salvarState();return{ok:true,price:rb.price,fonte:'Brapi'}}
+    if(rb.err==='TOKEN_REQ')return{ok:false,error:'Yahoo+proxies falharam; Brapi exige token (HTTP '+rb.status+'). Cadastre em brapi.dev ou edite manual.'};
+    return{ok:false,error:'Yahoo não achou "'+t+'". Brapi: '+rb.err+'.'};
+  }catch(e){const m=(e&&e.message)?e.message:String(e);return{ok:false,error:m.indexOf('Failed to fetch')>=0?'Falha de rede/CORS':m}}
+}
+async function atualizarCotacoes(ev){
+  const btn=(ev&&ev.target)||document.getElementById('btnAtualizar');
+  if(btn){btn.disabled=true;btn.textContent='Atualizando...'}
+  atualizarBarraStatus(true);
+  document.getElementById('rvLive').innerHTML='<span class="badge-live">atualizando '+state.rv.length+' ativos...</span>';
+  if(state.rv.length===0){if(btn){btn.disabled=false;btn.textContent='↻ Atualizar Cotações'}atualizarBarraStatus(false);document.getElementById('rvLive').innerHTML='<span class="muted" style="font-size:11px">Nenhum ativo.</span>';toast('Cadastre um ativo primeiro.','error');return}
+  let ok=0,fail=0;const erros=[];
+  await fetchCotacoesMoeda();
+  for(const a of state.rv){const res=await fetchCotacaoAtivo(a);if(res.ok)ok++;else{fail++;erros.push(a.ticker+': '+res.error)}}
+  renderTudo();
+  document.getElementById('rtUltimaAtualizacao').textContent=formatarHora(new Date());
+  atualizarBarraStatus(false);
+  _segundosRestantes=(state.config.intervaloMin||5)*60;
+  const msg=ok+' atualizadas'+(fail?' - '+fail+' falharam':'');
+  document.getElementById('rvLive').innerHTML='<span class="badge-live">'+msg+'</span>'+(fail?' <button class="small ghost" onclick="mostrarErrosCotacao()" style="margin-left:6px">ver detalhes</button>':'');
+  window._ultimosErros=erros;
+  if(btn){btn.disabled=false;btn.textContent='↻ Atualizar Cotações'}
+  toast(msg,fail?'error':'success');
+}
+function mostrarErrosCotacao(){const e=window._ultimosErros||[];if(!e.length)return;alert('Falhas:\n\n'+e.join('\n')+'\n\nDicas:\n- Cadastre token em brapi.dev e cole nas Configurações.\n- Edite o ativo e digite a cotação manualmente.\n- Hospede em http (Netlify Drop) se estiver em file://.')}
+
+function atualizarLabelsRF(){const t=document.getElementById('rfTipo').value;const lbl=document.getElementById('rfLblTaxa');const m={'CDI':'% do CDI (ex.: 100)','PRE':'Taxa anual % (ex.: 12)','IPCA':'Cupom anual % (ex.: 6)','SELIC':'Spread sobre Selic %'};lbl.firstChild.textContent=m[t]+' '}
+// ====== CALCULO PRECISO COM DADOS REAIS DO BCB ======
+let _bcbCDICache=null,_bcbIPCACache=null,_tesouroCache=null;
+function formatarDataBR(d){const dt=(d instanceof Date)?d:new Date(d);const dd=String(dt.getDate()).padStart(2,'0'),mm=String(dt.getMonth()+1).padStart(2,'0'),yy=dt.getFullYear();return dd+'/'+mm+'/'+yy}
+async function bcbFetch(serie,dataInicial){
+  const di=dataInicial?('&dataInicial='+encodeURIComponent(dataInicial)):'';
+  const url='https://api.bcb.gov.br/dados/serie/bcdata.sgs.'+serie+'/dados?formato=json'+di;
+  const tent=[url,'https://corsproxy.io/?'+encodeURIComponent(url),'https://api.allorigins.win/raw?url='+encodeURIComponent(url)];
+  for(const u of tent){try{const r=await fetch(u);if(r.ok)return await r.json()}catch(e){}}
+  return null;
+}
+function dataMinRF(tipos){const ds=state.rf.filter(r=>tipos.includes(r.tipo)).map(r=>r.data).sort();return ds[0]||null}
+async function carregarHistoricoBCB(){
+  let ok=0;
+  const dMinCDI=dataMinRF(['CDI']);
+  const dMinSELIC=dataMinRF(['SELIC']);
+  const dMinDiario=[dMinCDI,dMinSELIC].filter(Boolean).sort()[0];
+  if(dMinDiario){
+    const items=await bcbFetch(12,formatarDataBR(dMinDiario));
+    if(items){_bcbCDICache={dataMin:dMinDiario,items};ok++}
+  }
+  const dMinIPCA=dataMinRF(['IPCA']);
+  if(dMinIPCA){
+    const items=await bcbFetch(433,formatarDataBR(dMinIPCA));
+    if(items){_bcbIPCACache={dataMin:dMinIPCA,items};ok++}
+  }
+  return ok;
+}
+async function atualizarHistoricoBCB(ev){
+  const btn=ev&&ev.target;if(btn){btn.disabled=true;btn.textContent='Buscando BCB...'}
+  const ok=await carregarHistoricoBCB();
+  if(btn){btn.disabled=false;btn.textContent='↻ Atualizar com BCB (calculo preciso)'}
+  renderRF();renderResumo();
+  toast(ok>0?('Dados BCB carregados ('+ok+' series). Calculos agora precisos.'):'Falha ao carregar BCB.',ok>0?'success':'error');
+}
+function calcularRFPreciso(r){
+  const hj=new Date().toISOString().slice(0,10);
+  const dC=diasEntre(r.data,hj);
+  // CDI ou SELIC - usar serie diaria 12
+  if((r.tipo==='CDI'||r.tipo==='SELIC')&&_bcbCDICache){
+    let saldo=r.valor;
+    const dataApl=new Date(r.data);
+    for(const dia of _bcbCDICache.items){
+      const p=dia.data.split('/');const dt=new Date(parseInt(p[2]),parseInt(p[1])-1,parseInt(p[0]));
+      if(dt<dataApl)continue;
+      const cdiD=parseFloat(dia.valor)/100;
+      if(r.tipo==='CDI')saldo*=1+cdiD*(r.taxa/100);
+      else saldo*=1+cdiD+(r.taxa||0)/100/252;
+    }
+    return{atual:saldo,rendimento:saldo-r.valor,rendPct:r.valor?(saldo-r.valor)/r.valor:0,dias:dC,preciso:true};
+  }
+  // IPCA+ - usar serie mensal 433 + cupom anual
+  if(r.tipo==='IPCA'&&_bcbIPCACache){
+    let saldo=r.valor;
+    const dataApl=new Date(r.data);
+    const cupomMensal=Math.pow(1+r.taxa/100,1/12)-1;
+    for(const mes of _bcbIPCACache.items){
+      const p=mes.data.split('/');const dt=new Date(parseInt(p[2]),parseInt(p[1])-1,parseInt(p[0]));
+      if(dt<dataApl)continue;
+      const ipcaD=parseFloat(mes.valor)/100;
+      saldo*=(1+ipcaD)*(1+cupomMensal);
+    }
+    return{atual:saldo,rendimento:saldo-r.valor,rendPct:r.valor?(saldo-r.valor)/r.valor:0,dias:dC,preciso:true};
+  }
+  // Sem cache - usa fallback annualized
+  return calcularRFAnualizado(r);
+}
+function calcularRFAnualizado(r){const hj=new Date().toISOString().slice(0,10);const dC=diasEntre(r.data,hj);const dU=diasUteis(r.data,hj);const cf=state.config;let at=r.valor;if(r.tipo==='CDI'){const a=(cf.cdi/100)*(r.taxa/100);const d=Math.pow(1+a,1/252)-1;at=r.valor*Math.pow(1+d,dU)}else if(r.tipo==='PRE'){const a=r.taxa/100;const d=Math.pow(1+a,1/252)-1;at=r.valor*Math.pow(1+d,dU)}else if(r.tipo==='IPCA'){const i=cf.ipca/100,c=r.taxa/100;const a=(1+i)*(1+c)-1;const d=Math.pow(1+a,1/252)-1;at=r.valor*Math.pow(1+d,dU)}else if(r.tipo==='SELIC'){const s=cf.selic/100,sp=(r.taxa||0)/100;const a=s+sp;const d=Math.pow(1+a,1/252)-1;at=r.valor*Math.pow(1+d,dU)}const rd=at-r.valor;return{atual:at,rendimento:rd,rendPct:r.valor?rd/r.valor:0,dias:dC,diasUteis:dU,preciso:false}}
+function calcularRF(r){return calcularRFPreciso(r)}
+// ====== TESOURO DIRETO ======
+async function fetchTesouroDireto(logFn){
+  const log=logFn||function(){};
+  const urls=[
+    'https://www.tesourodireto.com.br/json/br/com/b3/tesourodireto/service/api/treasurybondsinfo.json',
+    'https://sisweb.tesouro.gov.br/apex/cosis/sistd/obtem_arquivo/4:103,1'
+  ];
+  const proxies=[
+    u=>u,
+    u=>'https://corsproxy.io/?'+encodeURIComponent(u),
+    u=>'https://api.allorigins.win/raw?url='+encodeURIComponent(u),
+    u=>'https://api.codetabs.com/v1/proxy/?quest='+encodeURIComponent(u),
+    u=>'https://thingproxy.freeboard.io/fetch/'+u,
+    u=>'https://api.allorigins.win/get?url='+encodeURIComponent(u)
+  ];
+  for(const base of urls){
+    for(const p of proxies){
+      const u=p(base);
+      const nome=u.length>80?u.slice(0,80)+'...':u;
+      try{
+        log('Tentando: '+nome);
+        const r=await fetch(u,{method:'GET'});
+        if(!r.ok){log('  HTTP '+r.status);continue}
+        const txt=await r.text();
+        let data;
+        try{data=JSON.parse(txt)}catch(e){log('  JSON invalido');continue}
+        // allorigins /get retorna {contents:"..."}
+        if(data&&data.contents&&typeof data.contents==='string'){
+          try{data=JSON.parse(data.contents)}catch(e){log('  contents JSON invalido');continue}
+        }
+        if(data&&data.response&&data.response.TrsrBdTradgList){log('  OK '+data.response.TrsrBdTradgList.length+' titulos');return data}
+        log('  estrutura inesperada');
+      }catch(e){log('  erro: '+(e.message||e))}
+    }
+  }
+  return null;
+}
+const TESOURO_FALLBACK=[
+  {nm:'Tesouro Selic 2027',mtrtyDt:'2027-03-01',anulInvstmtRate:0.1290,untrInvstmtVal:15500,minInvstmtAmt:155.00,tipo:'SELIC'},
+  {nm:'Tesouro Selic 2029',mtrtyDt:'2029-03-01',anulInvstmtRate:0.1390,untrInvstmtVal:15500,minInvstmtAmt:155.00,tipo:'SELIC'},
+  {nm:'Tesouro Prefixado 2027',mtrtyDt:'2027-01-01',anulInvstmtRate:0.1380,untrInvstmtVal:870.00,minInvstmtAmt:87.00,tipo:'PRE'},
+  {nm:'Tesouro Prefixado 2029',mtrtyDt:'2029-01-01',anulInvstmtRate:0.1420,untrInvstmtVal:700.00,minInvstmtAmt:70.00,tipo:'PRE'},
+  {nm:'Tesouro Prefixado com Juros Semestrais 2031',mtrtyDt:'2031-01-01',anulInvstmtRate:0.1450,untrInvstmtVal:990.00,minInvstmtAmt:99.00,tipo:'PRE'},
+  {nm:'Tesouro IPCA+ 2029',mtrtyDt:'2029-05-15',anulInvstmtRate:0.0650,untrInvstmtVal:3200.00,minInvstmtAmt:32.00,tipo:'IPCA'},
+  {nm:'Tesouro IPCA+ 2035',mtrtyDt:'2035-05-15',anulInvstmtRate:0.0680,untrInvstmtVal:2400.00,minInvstmtAmt:24.00,tipo:'IPCA'},
+  {nm:'Tesouro IPCA+ 2045',mtrtyDt:'2045-05-15',anulInvstmtRate:0.0700,untrInvstmtVal:1400.00,minInvstmtAmt:14.00,tipo:'IPCA'},
+  {nm:'Tesouro IPCA+ com Juros Semestrais 2032',mtrtyDt:'2032-08-15',anulInvstmtRate:0.0660,untrInvstmtVal:3800.00,minInvstmtAmt:38.00,tipo:'IPCA'},
+  {nm:'Tesouro IPCA+ com Juros Semestrais 2055',mtrtyDt:'2055-05-15',anulInvstmtRate:0.0700,untrInvstmtVal:3200.00,minInvstmtAmt:32.00,tipo:'IPCA'},
+  {nm:'Tesouro RendA+ 2030',mtrtyDt:'2030-01-15',anulInvstmtRate:0.0650,untrInvstmtVal:1200.00,minInvstmtAmt:30.00,tipo:'IPCA'},
+  {nm:'Tesouro RendA+ 2065',mtrtyDt:'2065-01-15',anulInvstmtRate:0.0700,untrInvstmtVal:400.00,minInvstmtAmt:30.00,tipo:'IPCA'},
+  {nm:'Tesouro Educa+ 2030',mtrtyDt:'2030-01-15',anulInvstmtRate:0.0650,untrInvstmtVal:1200.00,minInvstmtAmt:30.00,tipo:'IPCA'},
+  {nm:'Tesouro Educa+ 2040',mtrtyDt:'2040-01-15',anulInvstmtRate:0.0700,untrInvstmtVal:800.00,minInvstmtAmt:30.00,tipo:'IPCA'}
+];
+
+function fmtBRLnum(v){if(v==null||isNaN(v))return '-';return v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}
+function renderTabelaTesouro(titles,fonte){
+  const tipoMap={'Tesouro Selic':'SELIC','Tesouro Prefixado':'PRE','Tesouro IPCA+':'IPCA','Tesouro IPCA+ com Juros Semestrais':'IPCA','Tesouro Prefixado com Juros Semestrais':'PRE','Tesouro RendA+':'IPCA','Tesouro Educa+':'IPCA'};
+  let html='<div style="margin-bottom:8px;padding:8px;background:var(--panel-2);border-radius:6px;font-size:12px">'+fonte+'</div>';
+  html+='<div class="table-wrap"><table><thead><tr><th>Titulo</th><th>Vencimento</th><th>Taxa (a.a.)</th><th>PU</th><th>Min.</th><th></th></tr></thead><tbody>';
+  titles.forEach(bd=>{
+    const nome=bd.nm||'-';
+    const venc=bd.mtrtyDt?bd.mtrtyDt.slice(0,10):'-';
+    const taxa=bd.anulInvstmtRate?(bd.anulInvstmtRate*100).toFixed(2)+'%':'-';
+    const taxaNum=(bd.anulInvstmtRate||0)*100; // converte para % anual
+    const pu=bd.untrInvstmtVal?fmtBRLnum(bd.untrInvstmtVal):'-';
+    const min=bd.minInvstmtAmt?fmtBRLnum(bd.minInvstmtAmt):'-';
+    let tipoRF=bd.tipo||'PRE';
+    if(!bd.tipo)Object.keys(tipoMap).forEach(k=>{if(nome.indexOf(k)===0)tipoRF=tipoMap[k]});
+    const nomeSafe=nome.replace(/'/g,"\\'").replace(/"/g,'');
+    html+='<tr><td><b>'+nome+'</b></td><td class="muted">'+venc+'</td><td class="green">'+taxa+'</td><td>R$ '+pu+'</td><td class="muted">R$ '+min+'</td><td><button class="small" onclick="usarTesouro(this,\''+nomeSafe+'\',\''+tipoRF+'\','+taxaNum+',\''+venc+'\')">Usar</button></td></tr>';
+  });
+  html+='</tbody></table></div>';
+  return html;
+}
+async function abrirTesouroDireto(){
+  document.getElementById('tesouroModal').style.display='flex';
+  const ct=document.getElementById('tesouroContent');
+  const logs=[];
+  ct.innerHTML='<div class="muted" style="text-align:center;padding:20px"><span class="spinner"></span> Buscando titulos no B3 (pode levar ate 30s)...</div>';
+  const data=await fetchTesouroDireto(m=>{logs.push(m);console.log('[TD]',m)});
+  if(data){
+    const titles=(data.response.TrsrBdTradgList||[]).map(t=>{const bd=t.TrsrBd||{};return{nm:bd.nm,mtrtyDt:bd.mtrtyDt,anulInvstmtRate:bd.anulInvstmtRate,untrInvstmtVal:bd.untrInvstmtVal,minInvstmtAmt:bd.minInvstmtAmt}});
+    // ajustar taxas (API retorna ja em formato decimal? as vezes em %)
+    // Verificacao: se taxa > 1, ja esta em %; se < 1, esta em decimal
+    titles.forEach(t=>{if(t.anulInvstmtRate&&t.anulInvstmtRate>1)t.anulInvstmtRate=t.anulInvstmtRate/100});
+    ct.innerHTML=renderTabelaTesouro(titles,'<span class="badge-live">Dados ao vivo do Tesouro Direto</span> '+titles.length+' titulos');
+  } else {
+    // Mostra fallback estatico + permite reload
+    let html='<div style="color:var(--yellow);padding:10px;background:rgba(245,158,11,.1);border-radius:6px;margin-bottom:10px;font-size:13px">';
+    html+='<b>Nao foi possivel buscar a API ao vivo</b> (CORS bloqueou todos os proxies).<br>';
+    html+='Mostrando lista de titulos comuns com <b>taxas aproximadas</b> - voce pode usar essa lista como referencia, mas confirme a taxa atual no app da sua corretora ou em tesourodireto.com.br antes de cadastrar.';
+    html+='<br><br><button class="small" onclick="abrirTesouroDireto()">↻ Tentar novamente</button>';
+    if(logs.length){html+=' <button class="small ghost" onclick="alert(\''+logs.join('\\\\n').replace(/'/g,"\\\\'")+'\')">Ver detalhes do erro</button>'}
+    html+='</div>';
+    ct.innerHTML=html+renderTabelaTesouro(TESOURO_FALLBACK,'<span style="color:var(--yellow)">Lista estatica de fallback - taxas aproximadas</span>');
+  }
+}
+function fecharTesouro(){document.getElementById('tesouroModal').style.display='none'}
+function usarTesouro(btn,nome,tipo,taxa,venc){
+  document.getElementById('rfNome').value=nome;
+  document.getElementById('rfTipo').value=tipo;
+  document.getElementById('rfTaxa').value=taxa;
+  if(venc&&venc!=='-')document.getElementById('rfVencimento').value=venc;
+  atualizarLabelsRF();
+  fecharTesouro();
+  document.querySelector('[data-tab="rf"]').click();
+  document.getElementById('rfValor').focus();
+  toast('Titulo carregado no formulario. Preencha o valor aplicado.');
+}
+
+function tipoLabel(t){return {CDI:'Pós (% CDI)',PRE:'Prefixado',IPCA:'IPCA+',SELIC:'Tesouro Selic'}[t]||t}
+function renderRF(){const tb=document.querySelector('#tabelaRF tbody');tb.innerHTML='';state.rf.forEach(r=>{const c=calcularRF(r);const cl=c.rendimento>=0?'green':'red';const ts=r.tipo==='CDI'?(r.taxa+'% CDI'):r.tipo==='IPCA'?('IPCA + '+r.taxa+'%'):r.tipo==='SELIC'?('Selic + '+(r.taxa||0)+'%'):(r.taxa+'% a.a.');tb.innerHTML+='<tr><td><b>'+r.nome+'</b><br><span class="muted" style="font-size:11px">'+ts+'</span></td><td>'+classeTag('Renda Fixa')+'<br><span class="muted" style="font-size:11px">'+tipoLabel(r.tipo)+'</span></td><td class="muted">'+r.data+'</td><td class="muted">'+(r.vencimento||'-')+'</td><td>'+c.dias+'</td><td>'+fmtBRL(r.valor)+'</td><td><b>'+fmtBRL(c.atual)+'</b></td><td class="'+cl+'">'+fmtBRL(c.rendimento)+'</td><td class="'+cl+'">'+fmtPct(c.rendPct)+'</td><td class="row-actions"><button class="small ghost" onclick="editarRF(\''+r.id+'\')">edit</button> <button class="small danger" onclick="removerRF(\''+r.id+'\')">x</button></td></tr>'});if(state.rf.length===0)tb.innerHTML='<tr><td colspan="10" class="muted" style="text-align:center;padding:20px">Nenhuma aplicação.</td></tr>';document.getElementById('rfRatesInfo').innerHTML='CDI '+state.config.cdi+'% - Selic '+state.config.selic+'% - IPCA '+state.config.ipca+'%';
+const pE=document.getElementById('rfPrecisao');
+if(pE){
+  const temCDI=_bcbCDICache?'<span class="badge-live">CDI real BCB</span>':'<span style="color:var(--yellow);font-size:11px">CDI estimado</span>';
+  const temIPCA=_bcbIPCACache?'<span class="badge-live" style="margin-left:6px">IPCA real BCB</span>':'';
+  pE.innerHTML=temCDI+temIPCA;
+}}
+function salvarRF(e){e.preventDefault();const id=document.getElementById('rfId').value||uid();const r={id,nome:document.getElementById('rfNome').value.trim(),tipo:document.getElementById('rfTipo').value,data:document.getElementById('rfData').value,vencimento:document.getElementById('rfVencimento').value||null,valor:parseFloat(document.getElementById('rfValor').value),taxa:parseFloat(document.getElementById('rfTaxa').value),liquidez:document.getElementById('rfLiquidez').value||'VENCIMENTO'};const i=state.rf.findIndex(x=>x.id===id);if(i>=0)state.rf[i]=r;else state.rf.push(r);salvarState();limparFormRF();renderTudo();toast('Aplicação salva.')}
+function editarRF(id){const r=state.rf.find(x=>x.id===id);if(!r)return;document.getElementById('rfId').value=r.id;document.getElementById('rfNome').value=r.nome;document.getElementById('rfTipo').value=r.tipo;document.getElementById('rfData').value=r.data;document.getElementById('rfVencimento').value=r.vencimento||'';document.getElementById('rfValor').value=r.valor;document.getElementById('rfTaxa').value=r.taxa;document.getElementById('rfLiquidez').value=r.liquidez||'VENCIMENTO';atualizarLabelsRF();document.querySelector('[data-tab="rf"]').click();window.scrollTo({top:0,behavior:'smooth'})}
+function removerRF(id){if(!confirm('Remover?'))return;state.rf=state.rf.filter(x=>x.id!==id);salvarState();renderTudo()}
+function limparFormRF(){document.getElementById('formRF').reset();document.getElementById('rfId').value=''}
+
+function totalRV(){let i=0,a=0;state.rv.forEach(x=>{const c=calcularRV(x);i+=c.investido;a+=c.atual});return{inv:i,atual:a}}
+function totalRF(){let i=0,a=0;state.rf.forEach(x=>{const c=calcularRF(x);i+=x.valor;a+=c.atual});return{inv:i,atual:a}}
+function totalCarteiraGeral(){return totalRV().atual+totalRF().atual}
+function renderResumo(){const tV=totalRV(),tF=totalRF();const i=tV.inv+tF.inv,a=tV.atual+tF.atual;const lp=a-i,r=i?lp/i:0;document.getElementById('sumInvestido').textContent=fmtBRL(i);document.getElementById('sumAtual').textContent=fmtBRL(a);document.getElementById('sumLP').textContent=fmtBRL(lp);document.getElementById('sumRent').textContent=fmtPct(r);document.getElementById('sumLPCard').className='card '+(lp>=0?'green':'red');document.getElementById('sumRentCard').className='card '+(r>=0?'green':'red')}
+
+const PALETTE=['#4f8cff','#22c55e','#f59e0b','#a855f7','#14b8a6','#ec4899','#ef4444','#06b6d4','#84cc16','#f97316'];
+// Defaults globais: tudo claro sobre fundo escuro
+if(typeof Chart!=='undefined'&&Chart.defaults){
+  Chart.defaults.color='#ffffff';
+  Chart.defaults.borderColor='#2a3340';
+  Chart.defaults.font.family='-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif';
+  if(Chart.defaults.plugins&&Chart.defaults.plugins.tooltip){
+    Chart.defaults.plugins.tooltip.backgroundColor='#1f2733';
+    Chart.defaults.plugins.tooltip.titleColor='#ffffff';
+    Chart.defaults.plugins.tooltip.bodyColor='#ffffff';
+    Chart.defaults.plugins.tooltip.borderColor='#2a3340';
+    Chart.defaults.plugins.tooltip.borderWidth=1;
+    Chart.defaults.plugins.tooltip.padding=10;
+  }
+  if(Chart.defaults.plugins&&Chart.defaults.plugins.legend){
+    Chart.defaults.plugins.legend.labels.color='#ffffff';
+  }
+}
+function gerarLegendaPct(chart){
+  const d=chart.data;if(!d.datasets[0])return [];
+  const tot=d.datasets[0].data.reduce((a,b)=>a+(b||0),0);
+  return d.labels.map((lab,i)=>{
+    const v=d.datasets[0].data[i]||0;
+    const pct=tot?(v/tot*100).toFixed(1):0;
+    return{text:lab+': '+pct+'%',fillStyle:d.datasets[0].backgroundColor[i],strokeStyle:d.datasets[0].backgroundColor[i],fontColor:'#ffffff',hidden:false,index:i,lineWidth:0};
+  });
+}
+function tooltipPct(ctx){
+  const tot=ctx.dataset.data.reduce((a,b)=>a+(b||0),0);
+  const pct=tot?(ctx.parsed/tot*100).toFixed(2):0;
+  return ctx.label+': R$ '+(ctx.parsed||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+' ('+pct+'%)';
+}
+let charts={};
+function destroyChart(k){if(charts[k]){charts[k].destroy();delete charts[k]}}
+function renderDashboard(){const bP={};state.rv.forEach(a=>{const c=calcularRV(a);const principal=principalDoAtivo(a.classe)||'(sem categoria)';bP[principal]=(bP[principal]||0)+c.atual});const rfT=totalRF().atual;if(rfT)bP['Renda Fixa']=(bP['Renda Fixa']||0)+rfT;destroyChart('classe');charts.classe=new Chart(document.getElementById('chartClasse'),{type:'doughnut',data:{labels:Object.keys(bP),datasets:[{data:Object.values(bP),backgroundColor:PALETTE,borderColor:'#171d26',borderWidth:2}]},options:{color:'#ffffff',plugins:{legend:{position:'bottom',labels:{color:'#ffffff',font:{size:13,weight:'500'},padding:14,generateLabels:gerarLegendaPct}},tooltip:{callbacks:{label:tooltipPct}}},maintainAspectRatio:false}});// Setor BR e INTL separadamente
+function renderChartSetorFiltrado(canvasId,chartKey,principalAlvo){
+  const bS={};
+  state.rv.forEach(a=>{
+    const principal=principalDoAtivo(a.classe);
+    if(principal!==principalAlvo)return;
+    const c=calcularRV(a);
+    const s=a.setor||'Sem setor';
+    bS[s]=(bS[s]||0)+c.atual;
+  });
+  const labels=Object.keys(bS);
+  destroyChart(chartKey);
+  const canvas=document.getElementById(canvasId);
+  if(!canvas)return;
+  if(labels.length===0){
+    const ct=canvas.getContext('2d');ct.clearRect(0,0,canvas.width,canvas.height);ct.fillStyle='#ffffff';ct.font='13px sans-serif';ct.textAlign='center';ct.fillText('Nenhum ativo em '+principalAlvo,canvas.width/2,canvas.height/2);
+    return;
+  }
+  charts[chartKey]=new Chart(canvas,{
+    type:'doughnut',
+    data:{labels,datasets:[{data:labels.map(k=>bS[k]),backgroundColor:PALETTE,borderColor:'#171d26',borderWidth:2}]},
+    options:{color:'#ffffff',plugins:{legend:{position:'right',align:'center',labels:{color:'#ffffff',font:{size:14,weight:'500'},padding:16,boxWidth:18,boxHeight:18,generateLabels:gerarLegendaPct}},tooltip:{callbacks:{label:tooltipPct}}},maintainAspectRatio:false}
+  });
+}
+renderChartSetorFiltrado('chartSetorBR','setorBR','Renda Variavel Nacional');
+renderChartSetorFiltrado('chartSetorINTL','setorINTL','Renda Variavel Internacional');const it=state.rv.map(a=>{const c=calcularRV(a);return{label:a.ticker,value:c.lp}});state.rf.forEach(r=>{const c=calcularRF(r);it.push({label:r.nome,value:c.rendimento})});it.sort((a,b)=>b.value-a.value);destroyChart('lp');charts.lp=new Chart(document.getElementById('chartLP'),{type:'bar',data:{labels:it.map(i=>i.label),datasets:[{data:it.map(i=>i.value),backgroundColor:it.map(i=>i.value>=0?'#22c55e':'#ef4444')}]},options:{indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>ctx.label+': R$ '+(ctx.parsed.x||ctx.parsed||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}}},scales:{x:{ticks:{color:'#ffffff'},grid:{color:'#2a3340'}},y:{ticks:{color:'#ffffff'},grid:{color:'#2a3340'}}},maintainAspectRatio:false}});const ativosRV=state.rv.filter(a=>!a.indexador&&principalDoAtivo(a.classe)!=='Renda Fixa');let totRV=0;ativosRV.forEach(a=>{totRV+=calcularRV(a).atual});const tops=ativosRV.map(a=>{const c=calcularRV(a);return{label:a.ticker,value:totRV?c.atual/totRV:0}});tops.sort((a,b)=>b.value-a.value);const t5=tops;destroyChart('top');charts.top=new Chart(document.getElementById('chartTop'),{type:'bar',data:{labels:t5.map(t=>t.label),datasets:[{label:'%',data:t5.map(t=>t.value*100),backgroundColor:PALETTE}]},options:{plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>ctx.label+': '+(ctx.parsed.y||0).toFixed(2)+'%'}}},scales:{x:{ticks:{color:'#ffffff'},grid:{color:'#2a3340'}},y:{ticks:{color:'#ffffff',callback:v=>v+'%'},grid:{color:'#2a3340'}}},maintainAspectRatio:false}});renderAlocacao();renderAlocacaoSetor('BR','tabelaAllocSetorBR');renderAlocacaoSetor('INTL','tabelaAllocSetorINTL');renderChartRF();renderChartLiquidez()}
+function renderChartLiquidez(){
+  // Agrupa renda fixa (state.rf + RV com indexador setado) por bucket de liquidez
+  const buckets={'Diaria':0,'2 a 5 dias':0,'Ate 1 ano':0,'1 a 5 anos':0,'Mais de 5 anos':0,'Sem vencimento':0};
+  const hoje=new Date();
+  function diasAteVenc(venc){
+    if(!venc)return null;
+    const v=new Date(venc);
+    return Math.floor((v.getTime()-hoje.getTime())/(1000*60*60*24));
+  }
+  function bucketDe(r,valor){
+    if(r.liquidez==='DIARIA'){buckets['Diaria']+=valor;return}
+    const d=diasAteVenc(r.vencimento);
+    if(d==null){buckets['Sem vencimento']+=valor;return}
+    if(d<=1){buckets['Diaria']+=valor}
+    else if(d<=5){buckets['2 a 5 dias']+=valor}
+    else if(d<=365){buckets['Ate 1 ano']+=valor}
+    else if(d<=1825){buckets['1 a 5 anos']+=valor}
+    else{buckets['Mais de 5 anos']+=valor}
+  }
+  state.rf.forEach(r=>{const c=calcularRF(r);bucketDe(r,c.atual)});
+  // ETFs/ativos de renda fixa na aba RV (com indexador) - tratados como liquidez diaria por padrao
+  state.rv.forEach(a=>{if(!a.indexador)return;const c=calcularRV(a);buckets['Diaria']+=c.atual});
+  const labels=Object.keys(buckets).filter(k=>buckets[k]>0);
+  const data=labels.map(k=>buckets[k]);
+  const cores={'Diaria':'#22c55e','2 a 5 dias':'#84cc16','Ate 1 ano':'#f59e0b','1 a 5 anos':'#a855f7','Mais de 5 anos':'#ef4444','Sem vencimento':'#8a95a5'};
+  const bg=labels.map(k=>cores[k]);
+  destroyChart('liquidez');
+  if(labels.length===0){
+    const ctx=document.getElementById('chartLiquidez');
+    if(ctx){const ct=ctx.getContext('2d');ct.clearRect(0,0,ctx.width,ctx.height);ct.fillStyle='#ffffff';ct.font='13px sans-serif';ct.textAlign='center';ct.fillText('Nenhuma renda fixa cadastrada',ctx.width/2,ctx.height/2)}
+    return;
+  }
+  charts.liquidez=new Chart(document.getElementById('chartLiquidez'),{
+    type:'doughnut',
+    data:{labels,datasets:[{data,backgroundColor:bg,borderColor:'#171d26',borderWidth:2}]},
+    options:{color:'#ffffff',plugins:{legend:{position:'bottom',labels:{color:'#ffffff',font:{size:13,weight:'500'},padding:14,generateLabels:gerarLegendaPct}},tooltip:{callbacks:{label:tooltipPct}}},maintainAspectRatio:false}
+  });
+}
+function renderChartRF(){
+  // Agrupa valores de Renda Fixa por indexador (CDI/PRE/IPCA/MISTO)
+  // Inclui: aplicacoes da aba RF (state.rf) + ativos RV com indexador setado
+  const grupos={'Pos-fixado (CDI/Selic)':0,'Prefixado':0,'IPCA+':0,'Misto':0};
+  const mapRF={CDI:'Pos-fixado (CDI/Selic)',SELIC:'Pos-fixado (CDI/Selic)',PRE:'Prefixado',IPCA:'IPCA+'};
+  const mapRV={CDI:'Pos-fixado (CDI/Selic)',PRE:'Prefixado',IPCA:'IPCA+',MISTO:'Misto'};
+  state.rf.forEach(r=>{const c=calcularRF(r);const k=mapRF[r.tipo];if(k)grupos[k]+=c.atual});
+  state.rv.forEach(a=>{if(!a.indexador)return;const c=calcularRV(a);const k=mapRV[a.indexador];if(k)grupos[k]+=c.atual});
+  const labels=Object.keys(grupos).filter(k=>grupos[k]>0);
+  const data=labels.map(k=>grupos[k]);
+  const cores=['#22c55e','#f59e0b','#a855f7','#06b6d4'];
+  destroyChart('rf');
+  if(labels.length===0){
+    const ctx=document.getElementById('chartRF');
+    if(ctx){const ct=ctx.getContext('2d');ct.clearRect(0,0,ctx.width,ctx.height);ct.fillStyle='#8a95a5';ct.font='13px sans-serif';ct.textAlign='center';ct.fillText('Nenhuma renda fixa cadastrada',ctx.width/2,ctx.height/2)}
+    return;
+  }
+  charts.rf=new Chart(document.getElementById('chartRF'),{
+    type:'doughnut',
+    data:{labels,datasets:[{data,backgroundColor:cores,borderColor:'#171d26',borderWidth:2}]},
+    options:{color:'#ffffff',plugins:{legend:{position:'bottom',labels:{color:'#ffffff',font:{size:13,weight:'500'},padding:14,generateLabels:gerarLegendaPct}},tooltip:{callbacks:{label:tooltipPct}}},maintainAspectRatio:false}
+  });
+}
+function renderAlocacao(){
+  const tb=document.querySelector('#tabelaAlloc tbody');tb.innerHTML='';
+  const tot=totalCarteiraGeral();
+  // Soma valor atual por classe principal
+  const bP={};
+  state.rv.forEach(a=>{const c=calcularRV(a);const principal=principalDoAtivo(a.classe)||'(sem categoria)';bP[principal]=(bP[principal]||0)+c.atual});
+  const rfT=totalRF().atual;if(rfT)bP['Renda Fixa']=(bP['Renda Fixa']||0)+rfT;
+  const principais=(state.config.classesPrincipais||[]).map(p=>p.nome);
+  // garante que principais sem ativos apareçam tambem
+  const todas=new Set([...principais,...Object.keys(bP)]);
+  let sI=0;
+  todas.forEach(cl=>{
+    const at=tot?(bP[cl]||0)/tot*100:0;
+    const id=(state.config.metasPrincipais&&state.config.metasPrincipais[cl])||0;
+    sI+=id;
+    const dv=at-id;
+    let ac='OK';if(Math.abs(dv)>=3)ac=dv>0?'Reduzir':'Aumentar';
+    tb.innerHTML+='<tr><td>'+classeTag(cl)+'</td><td><div class="alloc-cell"><div class="progress"><div style="width:'+Math.min(100,at)+'%"></div></div>'+at.toFixed(2)+'%</div></td><td>'+id.toFixed(2)+'%</td><td class="'+(dv>=0?'green':'red')+'">'+(dv>0?'+':'')+dv.toFixed(2)+'%</td><td>'+ac+'</td></tr>';
+  });
+  tb.innerHTML+='<tr style="font-weight:bold"><td>TOTAL</td><td>100%</td><td>'+sI.toFixed(2)+'%</td><td colspan="2">'+(sI===100?'OK':'Soma '+sI.toFixed(2)+'% (ideal: 100%)')+'</td></tr>';
+}
+
+// ===== Alocação por Setor (BR / INTL) =====
+let _setorTabAtual='BR';
+function chaveSetorEscopo(e){return e==='INTL'?'setoresIdeaisINTL':'setoresIdeaisBR'}
+function principalDoEscopo(e){return e==='INTL'?'Renda Variavel Internacional':'Renda Variavel Nacional'}
+function setSetorTab(escopo){
+  _setorTabAtual=escopo;
+  const b1=document.getElementById('btnSetTabBR'),b2=document.getElementById('btnSetTabINTL');
+  if(b1)b1.className='small '+(escopo==='BR'?'':'ghost');
+  if(b2)b2.className='small '+(escopo==='INTL'?'':'ghost');
+  renderSetoresIdeais();
+}
+function adicionarSetorIdeal(e){
+  e.preventDefault();
+  const nome=document.getElementById('novoSetorNome').value.trim();
+  const pct=parseFloat(document.getElementById('novoSetorPct').value);
+  if(!nome||isNaN(pct))return;
+  const k=chaveSetorEscopo(_setorTabAtual);
+  state.config[k]=state.config[k]||{};
+  if(Object.keys(state.config[k]).some(x=>x.toLowerCase()===nome.toLowerCase())){toast('Setor ja existe neste escopo.','error');return}
+  state.config[k][nome]=pct;
+  salvarState();
+  document.getElementById('novoSetorNome').value='';
+  document.getElementById('novoSetorPct').value='';
+  renderSetoresIdeais();
+  if(document.getElementById('tab-dash').classList.contains('active'))renderDashboard();
+  toast('Setor "'+nome+'" adicionado.');
+}
+function removerSetorIdeal(escopo,nome){
+  if(!confirm('Remover setor "'+nome+'" do escopo '+(escopo==='BR'?'Nacional':'Internacional')+'?'))return;
+  const k=chaveSetorEscopo(escopo);
+  if(state.config[k])delete state.config[k][nome];
+  salvarState();renderSetoresIdeais();
+  if(document.getElementById('tab-dash').classList.contains('active'))renderDashboard();
+  toast('Removido.');
+}
+function salvarSetorIdeal(escopo,nome,v){
+  const k=chaveSetorEscopo(escopo);
+  state.config[k]=state.config[k]||{};
+  state.config[k][nome]=parseFloat(v)||0;
+  salvarState();renderSetoresIdeais();
+  if(document.getElementById('tab-dash').classList.contains('active'))renderDashboard();
+}
+function renderSetoresIdeais(){
+  const tb=document.querySelector('#tabelaSetoresIdeais tbody');
+  if(!tb)return;
+  tb.innerHTML='';
+  const escopo=_setorTabAtual;
+  const k=chaveSetorEscopo(escopo);
+  const setores=state.config[k]||{};
+  const nomes=Object.keys(setores).sort();
+  let soma=0;
+  nomes.forEach(nome=>{
+    const v=Number(setores[nome])||0;
+    soma+=v;
+    const nEsc=nome.replace(/'/g,"\\'");
+    tb.innerHTML+='<tr><td><b>'+nome+'</b></td><td><input type="number" step="any" value="'+v+'" style="width:90px" onchange="salvarSetorIdeal(\''+escopo+'\',\''+nEsc+'\', this.value)"></td><td class="row-actions"><button class="small danger" onclick="removerSetorIdeal(\''+escopo+'\',\''+nEsc+'\')">x</button></td></tr>';
+  });
+  if(nomes.length===0){
+    tb.innerHTML='<tr><td colspan="3" class="muted" style="text-align:center;padding:14px">Nenhum setor cadastrado para '+(escopo==='BR'?'Nacional':'Internacional')+'. Adicione acima.</td></tr>';
+  } else {
+    const ok=Math.abs(soma-100)<0.01;
+    tb.innerHTML+='<tr style="font-weight:bold"><td>TOTAL</td><td>'+soma.toFixed(2)+'%</td><td class="'+(ok?'green':'red')+'">'+(ok?'OK':'soma deve ser 100%')+'</td></tr>';
+  }
+}
+function renderAlocacaoSetor(escopo,tableId){
+  const tb=document.querySelector('#'+tableId+' tbody');
+  if(!tb)return;
+  tb.innerHTML='';
+  const principalAlvo=principalDoEscopo(escopo);
+  const k=chaveSetorEscopo(escopo);
+  const ideais=state.config[k]||{};
+  const bS={};
+  let totalEscopo=0;
+  state.rv.forEach(a=>{
+    const principal=principalDoAtivo(a.classe);
+    if(principal!==principalAlvo)return;
+    const c=calcularRV(a);
+    const s=(a.setor&&a.setor.trim())?a.setor.trim():'Sem setor';
+    bS[s]=(bS[s]||0)+c.atual;
+    totalEscopo+=c.atual;
+  });
+  const todos=new Set([...Object.keys(ideais),...Object.keys(bS)]);
+  if(todos.size===0){
+    tb.innerHTML='<tr><td colspan="5" class="muted" style="text-align:center;padding:14px">Nenhum ativo ou setor configurado para '+principalAlvo+'.</td></tr>';
+    return;
+  }
+  let sI=0;
+  const arr=[...todos].sort((x,y)=>(bS[y]||0)-(bS[x]||0));
+  arr.forEach(setor=>{
+    const at=totalEscopo?(bS[setor]||0)/totalEscopo*100:0;
+    const id=Number(ideais[setor])||0;
+    sI+=id;
+    const dv=at-id;
+    let ac='OK';
+    if(id===0&&at>0)ac='Sem meta';
+    else if(at===0&&id>0)ac='Aumentar';
+    else if(Math.abs(dv)>=3)ac=dv>0?'Reduzir':'Aumentar';
+    tb.innerHTML+='<tr><td>'+setor+'</td><td><div class="alloc-cell"><div class="progress"><div style="width:'+Math.min(100,at)+'%"></div></div>'+at.toFixed(2)+'%</div></td><td>'+id.toFixed(2)+'%</td><td class="'+(dv>=0?'green':'red')+'">'+(dv>0?'+':'')+dv.toFixed(2)+'%</td><td>'+ac+'</td></tr>';
+  });
+  const totalLabel=totalEscopo?'100%':'0%';
+  const somaOk=Math.abs(sI-100)<0.01;
+  const msgSoma=sI===0?'Sem metas definidas':(somaOk?'OK':'Soma '+sI.toFixed(2)+'% (ideal: 100%)');
+  tb.innerHTML+='<tr style="font-weight:bold"><td>TOTAL</td><td>'+totalLabel+'</td><td>'+sI.toFixed(2)+'%</td><td colspan="2">'+msgSoma+'</td></tr>';
+}
+
+function renderClassesPrincipais(){
+  const tb=document.querySelector('#tabelaPrincipais tbody');
+  if(!tb)return;
+  tb.innerHTML='';
+  const COR_NOME={acoes:'Azul',intl:'Roxo',cripto:'Amarelo',rf:'Verde',fii:'Ciano',accent:'Padrao'};
+  (state.config.classesPrincipais||[]).forEach((p,i)=>{
+    const subs=(state.config.subclasses||[]).filter(s=>s.principal===p.nome);
+    const ativos=state.rv.filter(a=>{const s=(state.config.subclasses||[]).find(x=>x.nome===a.classe);return s&&s.principal===p.nome}).length + (p.nome==='Renda Fixa'?state.rf.length:0);
+    const podeRemover=subs.length===0 && ativos===0;
+    const btn=podeRemover?'<button class="small danger" onclick="removerPrincipal('+i+')">x</button>':'<button class="small ghost" disabled title="em uso">x</button>';
+    tb.innerHTML+='<tr><td>'+classeTag(p.nome)+'</td><td class="muted">'+(COR_NOME[p.cor]||p.cor||'-')+'</td><td class="muted">'+subs.length+'</td><td class="muted">'+ativos+'</td><td class="row-actions">'+btn+'</td></tr>';
+  });
+  if(!state.config.classesPrincipais||state.config.classesPrincipais.length===0)tb.innerHTML='<tr><td colspan="5" class="muted" style="text-align:center;padding:14px">Nenhuma classe principal.</td></tr>';
+  // Atualiza dropdown de subclasses
+  const selPrinc=document.getElementById('novaSubPrincipal');
+  if(selPrinc){
+    const cur=selPrinc.value;
+    selPrinc.innerHTML='';
+    (state.config.classesPrincipais||[]).forEach(p=>{
+      const o=document.createElement('option');o.value=p.nome;o.textContent=p.nome;selPrinc.appendChild(o);
+    });
+    if(cur&&[...selPrinc.options].some(o=>o.value===cur))selPrinc.value=cur;
+  }
+}
+function renderSubclasses(){
+  // Atualiza dropdown do formulario de ativos (com optgroup)
+  const sel=document.getElementById('rvClasse');
+  if(sel){
+    const cur=sel.value;
+    sel.innerHTML='';
+    (state.config.classesPrincipais||[]).forEach(p=>{
+      const subs=(state.config.subclasses||[]).filter(s=>s.principal===p.nome);
+      if(subs.length===0)return;
+      const og=document.createElement('optgroup');og.label=p.nome;
+      subs.forEach(s=>{const o=document.createElement('option');o.value=s.nome;o.textContent=s.nome;og.appendChild(o)});
+      sel.appendChild(og);
+    });
+    if(cur&&[...sel.options].some(o=>o.value===cur))sel.value=cur;
+  }
+  // Tabela de subclasses
+  const tb=document.querySelector('#tabelaSubclasses tbody');
+  if(tb){
+    tb.innerHTML='';
+    const TIPO_DESC={BR:'B3 (Yahoo .SA / Brapi)',INTL:'Internacional (Yahoo)',CRYPTO:'CoinGecko',RF:'Manual'};
+    (state.config.subclasses||[]).forEach((s,i)=>{
+      const emUso=state.rv.filter(a=>a.classe===s.nome).length;
+      const btn=emUso?'<button class="small ghost" disabled title="em uso">x</button>':'<button class="small danger" onclick="removerSubclasse('+i+')">x</button>';
+      tb.innerHTML+='<tr><td><b>'+s.nome+'</b></td><td>'+classeTag(s.principal)+'</td><td class="muted">'+(TIPO_DESC[s.tipo]||s.tipo)+'</td><td class="muted">'+(emUso||'-')+'</td><td class="row-actions">'+btn+'</td></tr>';
+    });
+    if(!state.config.subclasses||state.config.subclasses.length===0)tb.innerHTML='<tr><td colspan="5" class="muted" style="text-align:center;padding:14px">Nenhuma subclasse.</td></tr>';
+  }
+}
+function adicionarPrincipal(e){
+  e.preventDefault();
+  const nome=document.getElementById('novaPrincipalNome').value.trim();
+  const cor=document.getElementById('novaPrincipalCor').value;
+  if(!nome)return;
+  if((state.config.classesPrincipais||[]).some(p=>p.nome.toLowerCase()===nome.toLowerCase())){toast('Ja existe.','error');return}
+  state.config.classesPrincipais=state.config.classesPrincipais||[];
+  state.config.classesPrincipais.push({nome,cor});
+  state.config.metasPrincipais=state.config.metasPrincipais||{};
+  if(!(nome in state.config.metasPrincipais))state.config.metasPrincipais[nome]=0;
+  salvarState();
+  document.getElementById('novaPrincipalNome').value='';
+  renderTudo();
+  toast('Classe principal "'+nome+'" adicionada.');
+}
+function removerPrincipal(idx){
+  const p=state.config.classesPrincipais[idx];if(!p)return;
+  const subs=(state.config.subclasses||[]).filter(s=>s.principal===p.nome);
+  const ativos=state.rv.filter(a=>{const s=(state.config.subclasses||[]).find(x=>x.nome===a.classe);return s&&s.principal===p.nome}).length;
+  if(subs.length>0||ativos>0||(p.nome==='Renda Fixa'&&state.rf.length>0)){toast('Esta classe esta em uso.','error');return}
+  if(!confirm('Remover classe principal "'+p.nome+'"?'))return;
+  state.config.classesPrincipais.splice(idx,1);
+  if(state.config.metasPrincipais)delete state.config.metasPrincipais[p.nome];
+  salvarState();renderTudo();toast('Removida.');
+}
+function adicionarSubclasse(e){
+  e.preventDefault();
+  const nome=document.getElementById('novaSubNome').value.trim();
+  const principal=document.getElementById('novaSubPrincipal').value;
+  const tipo=document.getElementById('novaSubTipo').value;
+  if(!nome||!principal)return;
+  if((state.config.subclasses||[]).some(s=>s.nome.toLowerCase()===nome.toLowerCase())){toast('Ja existe subclasse com esse nome.','error');return}
+  state.config.subclasses=state.config.subclasses||[];
+  state.config.subclasses.push({nome,principal,tipo});
+  salvarState();
+  document.getElementById('novaSubNome').value='';
+  renderTudo();
+  toast('Subclasse "'+nome+'" adicionada em "'+principal+'".');
+}
+function removerSubclasse(idx){
+  const s=state.config.subclasses[idx];if(!s)return;
+  if(state.rv.some(a=>a.classe===s.nome)){toast('Existem ativos usando.','error');return}
+  if(!confirm('Remover subclasse "'+s.nome+'"?'))return;
+  state.config.subclasses.splice(idx,1);
+  salvarState();renderTudo();toast('Removida.');
+}
+function renderConfig(){document.getElementById('cfgCDI').value=state.config.cdi;document.getElementById('cfgSelic').value=state.config.selic;document.getElementById('cfgIPCA').value=state.config.ipca;const tk=document.getElementById('cfgBrapiToken');if(tk)tk.value=state.config.brapiToken||'';const sel=document.getElementById('cfgIntervalo');if(sel)sel.value=String(state.config.intervaloMin||5);const g=document.getElementById('metasGrid');g.innerHTML='';const metas=state.config.metasPrincipais||{};(state.config.classesPrincipais||[]).forEach(p=>{const v=metas[p.nome]||0;g.innerHTML+='<label class="field">'+p.nome+' (%) <input type="number" step="any" value="'+v+'" onchange="salvarMetaPrincipal(\''+p.nome+'\', this.value)"></label>'});renderSetoresIdeais()}
+function salvarConfig(){state.config.cdi=parseFloat(document.getElementById('cfgCDI').value)||0;state.config.selic=parseFloat(document.getElementById('cfgSelic').value)||0;state.config.ipca=parseFloat(document.getElementById('cfgIPCA').value)||0;const tk=document.getElementById('cfgBrapiToken');if(tk)state.config.brapiToken=tk.value.trim();const sel=document.getElementById('cfgIntervalo');if(sel)state.config.intervaloMin=parseInt(sel.value)||5;salvarState();renderTudo()}
+function salvarMeta(cl,v){state.config.metas=state.config.metas||{};state.config.metas[cl]=parseFloat(v)||0;salvarState();renderDashboard()}
+function salvarMetaPrincipal(cl,v){state.config.metasPrincipais=state.config.metasPrincipais||{};state.config.metasPrincipais[cl]=parseFloat(v)||0;salvarState();renderDashboard()}
+async function buscarTaxasBCB(){try{toast('Buscando taxas...');const[sR,iR]=await Promise.all([fetch('https://api.bcb.gov.br/dados/serie/bcdata.sgs.432/dados/ultimos/1?formato=json'),fetch('https://api.bcb.gov.br/dados/serie/bcdata.sgs.13522/dados/ultimos/1?formato=json')]);const sJ=await sR.json(),iJ=await iR.json();if(sJ&&sJ[0]&&sJ[0].valor){state.config.selic=parseFloat(sJ[0].valor);state.config.cdi=Math.max(0,state.config.selic-0.10)}if(iJ&&iJ[0]&&iJ[0].valor)state.config.ipca=parseFloat(iJ[0].valor);salvarState();renderConfig();renderTudo();toast('Taxas atualizadas.')}catch(e){toast('Falha BCB.','error')}}
+
+function exportarJSON(){const b=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download='carteira.json';a.click();URL.revokeObjectURL(u)}
+function importarJSON(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{const d=JSON.parse(ev.target.result);state={rv:d.rv||[],rf:d.rf||[],config:Object.assign(JSON.parse(JSON.stringify(DEFAULTS.config)),d.config||{})};salvarState();renderTudo();toast('Importado.')}catch(err){toast('JSON inválido.','error')}};r.readAsText(f);e.target.value=''}
+function resetarTudo(){if(!confirm('Apagar tudo?'))return;localStorage.removeItem(STORE_KEY);state=JSON.parse(JSON.stringify(DEFAULTS));renderTudo();toast('Apagado.')}
+
+function renderTudo(){renderResumo();renderRV();renderRF();renderClassesPrincipais();renderSubclasses();renderConfig();if(document.getElementById('tab-dash').classList.contains('active'))renderDashboard()}
+atualizarLabelsRF();
+renderTudo();
+document.getElementById('rfData').valueAsDate=new Date();
+if(state.rv.length>0)document.getElementById('rvLive').innerHTML='<span class="muted" style="font-size:11px">clique em Atualizar ou aguarde auto</span>';
+iniciarCountdown();
+iniciarAutoUpdate();
+if(state.rf.length>0)setTimeout(()=>{carregarHistoricoBCB().then(ok=>{if(ok>0){renderRF();renderResumo()}})},500);
+setTimeout(()=>{fetchCotacoesMoeda().then(ok=>{if(ok){renderTudo()}})},300);
+atualizarLabelMoeda();
+setInterval(()=>{if(document.getElementById('tab-rf').classList.contains('active')||document.getElementById('tab-dash').classList.contains('active')){renderRF();renderResumo()}},60000);
+
+// ====== PWA Install Prompt ======
+let _deferredPrompt=null;
+window.addEventListener('beforeinstallprompt',(e)=>{
+  e.preventDefault();
+  _deferredPrompt=e;
+  const btn=document.getElementById('btnInstalar');
+  if(btn){btn.style.display='inline-block';}
+  const msg=document.getElementById('msgInstall');
+  if(msg)msg.innerHTML=' <span style="color:var(--green)">App pronto para instalar.</span>';
+});
+async function instalarPWA(){
+  if(!_deferredPrompt){toast('Use o menu do navegador: Compartilhar > Adicionar a tela inicial.','error');return}
+  _deferredPrompt.prompt();
+  const r=await _deferredPrompt.userChoice;
+  if(r.outcome==='accepted'){toast('App instalado!')}
+  _deferredPrompt=null;
+  const btn=document.getElementById('btnInstalar');if(btn)btn.style.display='none';
+}
+window.addEventListener('appinstalled',()=>{toast('App instalado com sucesso!')});
+
+// Detect if running as installed PWA
+if(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches){
+  const msg=document.getElementById('msgInstall');
+  if(msg)msg.innerHTML=' <span class="badge-live">rodando como app instalado</span>';
+}
+</script>
+</body>
+</html>
