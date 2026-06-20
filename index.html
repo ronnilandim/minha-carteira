@@ -5,6 +5,31 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Carteira de Investimentos</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
+const firebaseConfig = {
+  apiKey: "AIzaSyCYdPPryo1pRICaLK1RZqAklqpVarqcYF8",
+  authDomain: "minha-carteira-f70fd.firebaseapp.com",
+  projectId: "minha-carteira-f70fd",
+  storageBucket: "minha-carteira-f70fd.firebasestorage.app",
+  messagingSenderId: "1018970078473",
+  appId: "1:1018970078473:web:78c9395210c90268e067d8"
+};
+const fbApp = initializeApp(firebaseConfig);
+const fbAuth = getAuth(fbApp);
+try { await setPersistence(fbAuth, browserLocalPersistence); } catch(e) { console.warn('persistence',e); }
+const fbDb = getFirestore(fbApp);
+const fbProvider = new GoogleAuthProvider();
+window.fbSignIn = () => signInWithPopup(fbAuth, fbProvider);
+window.fbSignOut = () => signOut(fbAuth);
+window.fbOnAuth = (cb) => onAuthStateChanged(fbAuth, cb);
+window.fbSetDoc = (path, data) => setDoc(doc(fbDb, ...path.split('/')), data);
+window.fbGetDoc = async (path) => { const s = await getDoc(doc(fbDb, ...path.split('/'))); return s.exists() ? s.data() : null; };
+window.fbReady = true;
+window.dispatchEvent(new Event('firebase-ready'));
+</script>
 <style>
 :root{--bg:#0f1419;--panel:#171d26;--panel-2:#1f2733;--border:#2a3340;--text:#e8edf3;--muted:#8a95a5;--accent:#4f8cff;--accent-2:#7aa8ff;--green:#22c55e;--red:#ef4444;--yellow:#f59e0b;--purple:#a855f7;--teal:#14b8a6;--pink:#ec4899}
 *{box-sizing:border-box}
@@ -140,6 +165,12 @@ details[open] summary{color:var(--text);margin-bottom:8px}
 <button class="ghost" onclick="exportarJSON()">&#8681; Exportar</button>
 <button class="ghost" onclick="document.getElementById('importFile').click()">&#8679; Importar</button>
 <input type="file" id="importFile" accept=".json" style="display:none" onchange="importarJSON(event)">
+<button class="ghost" id="btnLogin" onclick="entrarGoogle()" style="display:none">Entrar com Google</button>
+<span id="authBlock" style="display:none;align-items:center;gap:8px">
+  <span id="authUser" style="font-size:12px;color:var(--accent-2)"></span>
+  <span id="syncStatus" style="font-size:11px;color:var(--muted)"></span>
+  <button class="ghost small" onclick="sairGoogle()">Sair</button>
+</span>
 </div>
 </header>
 <div class="realtime-bar" id="realtimeBar">
@@ -461,7 +492,7 @@ function carregarState(){
     return{rv:p.rv||[],rf:p.rf||[],config:cfg};
   }catch(e){return JSON.parse(JSON.stringify(DEFAULTS))}
 }
-function salvarState(){localStorage.setItem(STORE_KEY,JSON.stringify(state))}
+function salvarState(){localStorage.setItem(STORE_KEY,JSON.stringify(state));if(window.onStateSaved)window.onStateSaved()}
 const fmtBRL=v=>(v==null||isNaN(v))?'-':v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const fmtPct=v=>(v==null||isNaN(v))?'-':(v*100).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'%';
 const fmtNum=(v,d)=>(v==null||isNaN(v))?'-':v.toLocaleString('pt-BR',{minimumFractionDigits:d||2,maximumFractionDigits:d||2});
@@ -1175,6 +1206,74 @@ if(state.rf.length>0)setTimeout(()=>{carregarHistoricoBCB().then(ok=>{if(ok>0){r
 setTimeout(()=>{fetchCotacoesMoeda().then(ok=>{if(ok){renderTudo()}})},300);
 atualizarLabelMoeda();
 setInterval(()=>{if(document.getElementById('tab-rf').classList.contains('active')||document.getElementById('tab-dash').classList.contains('active')){renderRF();renderResumo()}},60000);
+
+// ====== Firebase sync (Login Google + Firestore) ======
+let _fbUser=null,_fbSyncTimer=null,_fbLoadingCloud=false;
+function setSyncStatus(msg,color){const el=document.getElementById('syncStatus');if(el){el.textContent=msg;el.style.color=color||'var(--muted)'}}
+async function pushCarteiraCloud(){
+  if(!_fbUser||!window.fbSetDoc)return;
+  if(_fbLoadingCloud)return;
+  try{
+    setSyncStatus('sincronizando...','var(--yellow)');
+    await window.fbSetDoc('carteiras/'+_fbUser.uid,{rv:state.rv,rf:state.rf,config:state.config,updatedAt:Date.now()});
+    const ag=new Date();setSyncStatus('sincronizado '+ag.getHours()+':'+String(ag.getMinutes()).padStart(2,'0'),'var(--green)');
+  }catch(e){setSyncStatus('erro: '+(e.message||e),'var(--red)');console.error('cloud push',e)}
+}
+window.onStateSaved=function(){
+  if(!_fbUser)return;
+  if(_fbSyncTimer)clearTimeout(_fbSyncTimer);
+  _fbSyncTimer=setTimeout(pushCarteiraCloud,1000);
+};
+async function carregarCarteiraCloud(uid){
+  if(!window.fbGetDoc)return;
+  _fbLoadingCloud=true;
+  try{
+    setSyncStatus('carregando da nuvem...','var(--yellow)');
+    const d=await window.fbGetDoc('carteiras/'+uid);
+    if(d&&(d.rv||d.rf||d.config)){
+      state={rv:d.rv||[],rf:d.rf||[],config:Object.assign(JSON.parse(JSON.stringify(DEFAULTS.config)),d.config||{})};
+      localStorage.setItem(STORE_KEY,JSON.stringify(state));
+      renderTudo();
+      setSyncStatus('carregado da nuvem','var(--green)');
+      toast('Carteira da nuvem carregada.');
+    } else {
+      _fbLoadingCloud=false;
+      await pushCarteiraCloud();
+      toast('Carteira local enviada pra nuvem.');
+      return;
+    }
+  }catch(e){setSyncStatus('erro: '+(e.message||e),'var(--red)');console.error('cloud load',e)}
+  finally{_fbLoadingCloud=false}
+}
+async function entrarGoogle(){
+  if(!window.fbSignIn){toast('Firebase ainda nao carregou. Tente em 1 segundo.','error');return}
+  try{await window.fbSignIn()}catch(e){toast('Erro no login: '+(e.message||e),'error')}
+}
+async function sairGoogle(){
+  if(!confirm('Sair? Seus dados continuam salvos na nuvem.'))return;
+  try{await window.fbSignOut();toast('Desconectado.')}catch(e){toast('Erro: '+e.message,'error')}
+}
+function setupFirebaseAuth(){
+  if(!window.fbOnAuth)return;
+  document.getElementById('btnLogin').style.display='inline-block';
+  window.fbOnAuth(user=>{
+    _fbUser=user;
+    const btnL=document.getElementById('btnLogin'),blk=document.getElementById('authBlock'),u=document.getElementById('authUser');
+    if(user){
+      btnL.style.display='none';
+      blk.style.display='inline-flex';
+      u.textContent=user.displayName||user.email;
+      carregarCarteiraCloud(user.uid);
+    } else {
+      btnL.style.display='inline-block';
+      blk.style.display='none';
+      u.textContent='';
+      setSyncStatus('','');
+    }
+  });
+}
+if(window.fbReady)setupFirebaseAuth();
+else window.addEventListener('firebase-ready',setupFirebaseAuth);
 
 // ====== PWA Install Prompt ======
 let _deferredPrompt=null;
