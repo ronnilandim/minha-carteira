@@ -479,7 +479,23 @@ function iniciarCountdown(){if(_countdownTimer)clearInterval(_countdownTimer);co
 function iniciarAutoUpdate(){if(_autoTimer)clearInterval(_autoTimer);const ms=(state.config.intervaloMin||5)*60*1000;_autoTimer=setInterval(async()=>{if(!_autoAtivo)return;if(state.rv.length===0)return;await atualizarCotacoesAuto();_segundosRestantes=(state.config.intervaloMin||5)*60},ms)}
 function reiniciarAutoUpdate(){iniciarCountdown();iniciarAutoUpdate()}
 function toggleAutoUpdate(){_autoAtivo=document.getElementById('rtAutoCheck').checked;if(_autoAtivo){reiniciarAutoUpdate();toast('Auto-atualização ativada.')}else{toast('Auto-atualização pausada.','error');atualizarCountdownDisplay()}}
-async function atualizarCotacoesAuto(){if(state.rv.length===0)return;atualizarBarraStatus(true);await fetchCotacoesMoeda();for(const a of state.rv){await fetchCotacaoAtivo(a)}renderTudo();document.getElementById('rtUltimaAtualizacao').textContent=formatarHora(new Date());atualizarBarraStatus(false)}
+async function fetchEmParalelo(items,fn,limit,onProgress){
+  const results=new Array(items.length);
+  let next=0,done=0;
+  async function worker(){
+    while(true){
+      const idx=next++;
+      if(idx>=items.length)return;
+      try{results[idx]=await fn(items[idx],idx)}catch(e){results[idx]={ok:false,error:String(e&&e.message||e)}}
+      done++;
+      if(onProgress)onProgress(done,items.length);
+    }
+  }
+  const n=Math.min(limit||8,items.length);
+  await Promise.all(Array.from({length:n},worker));
+  return results;
+}
+async function atualizarCotacoesAuto(){if(state.rv.length===0)return;atualizarBarraStatus(true);await fetchCotacoesMoeda();await fetchEmParalelo(state.rv,fetchCotacaoAtivo,8);renderTudo();document.getElementById('rtUltimaAtualizacao').textContent=formatarHora(new Date());atualizarBarraStatus(false)}
 
 const _cacheMoedas={BRL:1,USD:5.0,EUR:5.5,GBP:6.5,CAD:3.7,ARS:0.005,JPY:0.032,CHF:5.7};
 async function fetchCotacoesMoeda(){
@@ -575,7 +591,14 @@ async function atualizarCotacoes(ev){
   if(state.rv.length===0){if(btn){btn.disabled=false;btn.textContent='↻ Atualizar Cotações'}atualizarBarraStatus(false);document.getElementById('rvLive').innerHTML='<span class="muted" style="font-size:11px">Nenhum ativo.</span>';toast('Cadastre um ativo primeiro.','error');return}
   let ok=0,fail=0;const erros=[];
   await fetchCotacoesMoeda();
-  for(const a of state.rv){const res=await fetchCotacaoAtivo(a);if(res.ok)ok++;else{fail++;erros.push(a.ticker+': '+res.error)}}
+  const liveEl=document.getElementById('rvLive');
+  await fetchEmParalelo(state.rv,async(a)=>{
+    const res=await fetchCotacaoAtivo(a);
+    if(res.ok)ok++;else{fail++;erros.push(a.ticker+': '+res.error)}
+    return res;
+  },8,(done,total)=>{
+    if(liveEl)liveEl.innerHTML='<span class="badge-live">atualizando '+done+'/'+total+'...</span>';
+  });
   renderTudo();
   document.getElementById('rtUltimaAtualizacao').textContent=formatarHora(new Date());
   atualizarBarraStatus(false);
