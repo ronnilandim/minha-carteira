@@ -92,6 +92,17 @@ td.green{color:var(--green)}td.red{color:var(--red)}td.muted{color:var(--muted)}
 .alloc-cell{display:flex;align-items:center;gap:8px;justify-content:flex-end}
 .progress{flex:1;max-width:120px;height:6px;background:var(--panel-2);border-radius:4px;overflow:hidden}
 .progress > div{height:100%;background:var(--accent)}
+.tag-acao{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px}
+.tag-acao.aumentar{background:rgba(34,197,94,.16);color:var(--green);border:1px solid rgba(34,197,94,.4)}
+.tag-acao.reduzir{background:rgba(245,158,11,.18);color:var(--yellow);border:1px solid rgba(245,158,11,.45)}
+.tag-acao.ok{background:rgba(138,149,165,.1);color:var(--muted)}
+.tag-acao.semmeta{background:rgba(168,85,247,.15);color:var(--purple);border:1px solid rgba(168,85,247,.35)}
+.panel.destaque{border-left:4px solid var(--accent);background:linear-gradient(180deg,rgba(79,140,255,.05) 0%,rgba(79,140,255,0) 100%)}
+.panel.destaque h2{color:var(--accent-2);font-size:17px}
+.panel.destaque h2::before{content:"\1F4CA  ";margin-right:2px}
+tr.row-aumentar td:not(:first-child){background:rgba(34,197,94,.05)!important}
+tr.row-reduzir td:not(:first-child){background:rgba(245,158,11,.05)!important}
+tr.row-aumentar:hover td,tr.row-reduzir:hover td{background:rgba(255,255,255,.03)!important}
 .toast{position:fixed;bottom:20px;right:20px;background:var(--panel);border:1px solid var(--border);padding:12px 16px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.4);transform:translateX(420px);transition:transform .25s;z-index:1000}
 .toast.show{transform:translateX(0)}
 .toast.success{border-color:var(--green)}.toast.error{border-color:var(--red)}
@@ -283,7 +294,28 @@ Auto-atualizar
 </div>
 </div>
 <div class="tab-content" id="tab-dash">
-<div class="charts-grid">
+<div class="panel destaque">
+<h2>Alocação Atual vs Ideal <small>(por classe)</small></h2>
+<div class="table-wrap"><table id="tabelaAlloc"><thead><tr>
+<th>Classe</th><th>Atual %</th><th>Ideal %</th><th>Desvio</th><th>Ação Sugerida</th>
+</tr></thead><tbody></tbody></table></div>
+<div class="small-text">Defina suas metas na aba <b>Configurações</b>.</div>
+</div>
+<div class="panel destaque" style="margin-top:14px">
+<h2>Alocação por Setor — Renda Variável Nacional <small>(atual vs ideal)</small></h2>
+<div class="table-wrap"><table id="tabelaAllocSetorBR"><thead><tr>
+<th>Setor</th><th>Atual %</th><th>Ideal %</th><th>Desvio</th><th>Ação Sugerida</th>
+</tr></thead><tbody></tbody></table></div>
+<div class="small-text">% calculado sobre o total da Renda Variável Nacional. Configure os setores ideais na aba <b>Configurações</b>.</div>
+</div>
+<div class="panel destaque" style="margin-top:14px">
+<h2>Alocação por Setor — Renda Variável Internacional <small>(atual vs ideal)</small></h2>
+<div class="table-wrap"><table id="tabelaAllocSetorINTL"><thead><tr>
+<th>Setor</th><th>Atual %</th><th>Ideal %</th><th>Desvio</th><th>Ação Sugerida</th>
+</tr></thead><tbody></tbody></table></div>
+<div class="small-text">% calculado sobre o total da Renda Variável Internacional.</div>
+</div>
+<div class="charts-grid" style="margin-top:18px">
 <div class="chart-box"><h3>Distribuição por Classe Principal</h3><div class="chart-area"><canvas id="chartClasse"></canvas></div></div>
 <div class="chart-box"><h3>Distribuição da Renda Fixa por Indexador</h3><div class="chart-area"><canvas id="chartRF"></canvas></div></div>
 <div class="chart-box"><h3>Liquidez da Renda Fixa</h3><div class="chart-area"><canvas id="chartLiquidez"></canvas></div></div>
@@ -291,27 +323,6 @@ Auto-atualizar
 <div class="chart-box wide"><h3>Distribuição por Setor — Renda Variável Nacional</h3><div class="chart-area"><canvas id="chartSetorBR"></canvas></div></div>
 <div class="chart-box wide"><h3>Distribuição por Setor — Renda Variável Internacional</h3><div class="chart-area"><canvas id="chartSetorINTL"></canvas></div></div>
 <div class="chart-box wide"><h3>Lucro / Prejuízo por Ativo</h3><div class="chart-area"><canvas id="chartLP"></canvas></div></div>
-</div>
-<div class="panel" style="margin-top:18px">
-<h2>Alocação Atual vs Ideal</h2>
-<div class="table-wrap"><table id="tabelaAlloc"><thead><tr>
-<th>Classe</th><th>Atual %</th><th>Ideal %</th><th>Desvio</th><th>Ação Sugerida</th>
-</tr></thead><tbody></tbody></table></div>
-<div class="small-text">Defina suas metas na aba <b>Configurações</b>.</div>
-</div>
-<div class="panel" style="margin-top:18px">
-<h2>Alocação por Setor — Renda Variável Nacional <small>(atual vs ideal)</small></h2>
-<div class="table-wrap"><table id="tabelaAllocSetorBR"><thead><tr>
-<th>Setor</th><th>Atual %</th><th>Ideal %</th><th>Desvio</th><th>Ação Sugerida</th>
-</tr></thead><tbody></tbody></table></div>
-<div class="small-text">% calculado sobre o total da Renda Variável Nacional. Configure os setores ideais na aba <b>Configurações</b>.</div>
-</div>
-<div class="panel" style="margin-top:18px">
-<h2>Alocação por Setor — Renda Variável Internacional <small>(atual vs ideal)</small></h2>
-<div class="table-wrap"><table id="tabelaAllocSetorINTL"><thead><tr>
-<th>Setor</th><th>Atual %</th><th>Ideal %</th><th>Desvio</th><th>Ação Sugerida</th>
-</tr></thead><tbody></tbody></table></div>
-<div class="small-text">% calculado sobre o total da Renda Variável Internacional.</div>
 </div>
 </div>
 <div class="tab-content" id="tab-config">
@@ -976,8 +987,15 @@ function renderAlocacao(){
     const id=(state.config.metasPrincipais&&state.config.metasPrincipais[cl])||0;
     sI+=id;
     const dv=at-id;
-    let ac='OK';if(Math.abs(dv)>=3)ac=dv>0?'Reduzir':'Aumentar';
-    tb.innerHTML+='<tr><td>'+classeTag(cl)+'</td><td><div class="alloc-cell"><div class="progress"><div style="width:'+Math.min(100,at)+'%"></div></div>'+at.toFixed(2)+'%</div></td><td>'+id.toFixed(2)+'%</td><td class="'+(dv>=0?'green':'red')+'">'+(dv>0?'+':'')+dv.toFixed(2)+'%</td><td>'+ac+'</td></tr>';
+    let acTipo='ok',acLabel='OK',rowCls='';
+    if(id===0&&at>0){acTipo='semmeta';acLabel='Sem meta'}
+    else if(at===0&&id>0){acTipo='aumentar';acLabel='↑ Aumentar';rowCls=' class="row-aumentar"'}
+    else if(Math.abs(dv)>=3){
+      if(dv>0){acTipo='reduzir';acLabel='↓ Reduzir';rowCls=' class="row-reduzir"'}
+      else{acTipo='aumentar';acLabel='↑ Aumentar';rowCls=' class="row-aumentar"'}
+    }
+    const acBadge='<span class="tag-acao '+acTipo+'">'+acLabel+'</span>';
+    tb.innerHTML+='<tr'+rowCls+'><td>'+classeTag(cl)+'</td><td><div class="alloc-cell"><div class="progress"><div style="width:'+Math.min(100,at)+'%"></div></div>'+at.toFixed(2)+'%</div></td><td>'+id.toFixed(2)+'%</td><td class="'+(dv>=0?'green':'red')+'">'+(dv>0?'+':'')+dv.toFixed(2)+'%</td><td>'+acBadge+'</td></tr>';
   });
   tb.innerHTML+='<tr style="font-weight:bold"><td>TOTAL</td><td>100%</td><td>'+sI.toFixed(2)+'%</td><td colspan="2">'+(sI===100?'OK':'Soma '+sI.toFixed(2)+'% (ideal: 100%)')+'</td></tr>';
 }
@@ -1075,11 +1093,15 @@ function renderAlocacaoSetor(escopo,tableId){
     const id=Number(ideais[setor])||0;
     sI+=id;
     const dv=at-id;
-    let ac='OK';
-    if(id===0&&at>0)ac='Sem meta';
-    else if(at===0&&id>0)ac='Aumentar';
-    else if(Math.abs(dv)>=3)ac=dv>0?'Reduzir':'Aumentar';
-    tb.innerHTML+='<tr><td>'+setor+'</td><td><div class="alloc-cell"><div class="progress"><div style="width:'+Math.min(100,at)+'%"></div></div>'+at.toFixed(2)+'%</div></td><td>'+id.toFixed(2)+'%</td><td class="'+(dv>=0?'green':'red')+'">'+(dv>0?'+':'')+dv.toFixed(2)+'%</td><td>'+ac+'</td></tr>';
+    let acTipo='ok',acLabel='OK',rowCls='';
+    if(id===0&&at>0){acTipo='semmeta';acLabel='Sem meta'}
+    else if(at===0&&id>0){acTipo='aumentar';acLabel='↑ Aumentar';rowCls=' class="row-aumentar"'}
+    else if(Math.abs(dv)>=3){
+      if(dv>0){acTipo='reduzir';acLabel='↓ Reduzir';rowCls=' class="row-reduzir"'}
+      else{acTipo='aumentar';acLabel='↑ Aumentar';rowCls=' class="row-aumentar"'}
+    }
+    const acBadge='<span class="tag-acao '+acTipo+'">'+acLabel+'</span>';
+    tb.innerHTML+='<tr'+rowCls+'><td>'+setor+'</td><td><div class="alloc-cell"><div class="progress"><div style="width:'+Math.min(100,at)+'%"></div></div>'+at.toFixed(2)+'%</div></td><td>'+id.toFixed(2)+'%</td><td class="'+(dv>=0?'green':'red')+'">'+(dv>0?'+':'')+dv.toFixed(2)+'%</td><td>'+acBadge+'</td></tr>';
   });
   const totalLabel=totalEscopo?'100%':'0%';
   const somaOk=Math.abs(sI-100)<0.01;
