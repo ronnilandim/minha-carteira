@@ -203,12 +203,12 @@ Auto-atualizar
 <div class="card" id="sumRentCard"><div class="label">Rentabilidade</div><div class="value" id="sumRent">0,00%</div></div>
 </section>
 <div class="tabs">
-<button class="tab active" data-tab="rv">Renda Variável</button>
+<button class="tab active" data-tab="dash">Dashboard</button>
+<button class="tab" data-tab="rv">Renda Variável</button>
 <button class="tab" data-tab="rf">Renda Fixa</button>
-<button class="tab" data-tab="dash">Dashboard</button>
 <button class="tab" data-tab="config">Configurações</button>
 </div>
-<div class="tab-content active" id="tab-rv">
+<div class="tab-content" id="tab-rv">
 <div class="panel">
 <h2>Adicionar / Editar Ativo de Renda Variável <small id="rvLive"></small></h2>
 <form id="formRV" onsubmit="salvarRV(event)">
@@ -293,8 +293,41 @@ Auto-atualizar
 </tr></thead><tbody></tbody></table></div>
 </div>
 </div>
-<div class="tab-content" id="tab-dash">
-<div class="panel destaque">
+<div class="tab-content active" id="tab-dash">
+<div class="panel">
+<h2>Comparativo de Rentabilidade <small>(sua carteira vs indexador)</small></h2>
+<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin-bottom:10px">
+<label class="field" style="min-width:180px">Indexador
+<select id="compIndex" onchange="renderComparativo()">
+<option value="CDI">CDI (100%)</option>
+<option value="CDI_120">120% do CDI</option>
+<option value="CDI_150">150% do CDI</option>
+<option value="SELIC">Selic</option>
+<option value="IPCA">IPCA</option>
+<option value="IPCA_6">IPCA + 6% a.a.</option>
+<option value="POUPANCA">Poupança</option>
+<option value="CUSTOM">Personalizado (% a.a.)</option>
+</select></label>
+<label class="field" id="compCustomWrap" style="min-width:140px;display:none">% a.a. personalizada
+<input type="number" step="any" id="compCustom" value="10" onchange="renderComparativo()">
+</label>
+<label class="field" style="min-width:140px">Desde
+<input type="date" id="compDesde" onchange="renderComparativo()">
+</label>
+</div>
+<div style="height:280px;position:relative"><canvas id="chartComparativo"></canvas></div>
+<div id="compResumo" class="small-text" style="margin-top:10px;padding:10px;background:var(--panel-2);border-radius:8px"></div>
+</div>
+<div class="charts-grid" style="margin-top:14px">
+<div class="chart-box"><h3>Distribuição por Classe Principal</h3><div class="chart-area"><canvas id="chartClasse"></canvas></div></div>
+<div class="chart-box"><h3>Distribuição da Renda Fixa por Indexador</h3><div class="chart-area"><canvas id="chartRF"></canvas></div></div>
+<div class="chart-box"><h3>Liquidez da Renda Fixa</h3><div class="chart-area"><canvas id="chartLiquidez"></canvas></div></div>
+<div class="chart-box"><h3>Ativos por % da Renda Variável</h3><div class="chart-area"><canvas id="chartTop"></canvas></div></div>
+<div class="chart-box wide"><h3>Distribuição por Setor — Renda Variável Nacional</h3><div class="chart-area"><canvas id="chartSetorBR"></canvas></div></div>
+<div class="chart-box wide"><h3>Distribuição por Setor — Renda Variável Internacional</h3><div class="chart-area"><canvas id="chartSetorINTL"></canvas></div></div>
+<div class="chart-box wide"><h3>Lucro / Prejuízo por Ativo</h3><div class="chart-area"><canvas id="chartLP"></canvas></div></div>
+</div>
+<div class="panel destaque" style="margin-top:14px">
 <h2>Alocação Atual vs Ideal <small>(por classe)</small></h2>
 <div class="table-wrap"><table id="tabelaAlloc"><thead><tr>
 <th>Classe</th><th>Atual %</th><th>Ideal %</th><th>Desvio</th><th>Ação Sugerida</th>
@@ -314,15 +347,6 @@ Auto-atualizar
 <th>Setor</th><th>Atual %</th><th>Ideal %</th><th>Desvio</th><th>Ação Sugerida</th>
 </tr></thead><tbody></tbody></table></div>
 <div class="small-text">% calculado sobre o total da Renda Variável Internacional.</div>
-</div>
-<div class="charts-grid" style="margin-top:18px">
-<div class="chart-box"><h3>Distribuição por Classe Principal</h3><div class="chart-area"><canvas id="chartClasse"></canvas></div></div>
-<div class="chart-box"><h3>Distribuição da Renda Fixa por Indexador</h3><div class="chart-area"><canvas id="chartRF"></canvas></div></div>
-<div class="chart-box"><h3>Liquidez da Renda Fixa</h3><div class="chart-area"><canvas id="chartLiquidez"></canvas></div></div>
-<div class="chart-box"><h3>Ativos por % da Renda Variável</h3><div class="chart-area"><canvas id="chartTop"></canvas></div></div>
-<div class="chart-box wide"><h3>Distribuição por Setor — Renda Variável Nacional</h3><div class="chart-area"><canvas id="chartSetorBR"></canvas></div></div>
-<div class="chart-box wide"><h3>Distribuição por Setor — Renda Variável Internacional</h3><div class="chart-area"><canvas id="chartSetorINTL"></canvas></div></div>
-<div class="chart-box wide"><h3>Lucro / Prejuízo por Ativo</h3><div class="chart-area"><canvas id="chartLP"></canvas></div></div>
 </div>
 </div>
 <div class="tab-content" id="tab-config">
@@ -909,7 +933,7 @@ function renderChartSetorFiltrado(canvasId,chartKey,principalAlvo){
   });
 }
 renderChartSetorFiltrado('chartSetorBR','setorBR','Renda Variavel Nacional');
-renderChartSetorFiltrado('chartSetorINTL','setorINTL','Renda Variavel Internacional');const it=state.rv.map(a=>{const c=calcularRV(a);return{label:a.ticker,value:c.lp}});state.rf.forEach(r=>{const c=calcularRF(r);it.push({label:r.nome,value:c.rendimento})});it.sort((a,b)=>b.value-a.value);destroyChart('lp');charts.lp=new Chart(document.getElementById('chartLP'),{type:'bar',data:{labels:it.map(i=>i.label),datasets:[{data:it.map(i=>i.value),backgroundColor:it.map(i=>i.value>=0?'#22c55e':'#ef4444')}]},options:{indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>ctx.label+': R$ '+(ctx.parsed.x||ctx.parsed||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}}},scales:{x:{ticks:{color:'#ffffff'},grid:{color:'#2a3340'}},y:{ticks:{color:'#ffffff'},grid:{color:'#2a3340'}}},maintainAspectRatio:false}});const ativosRV=state.rv.filter(a=>!a.indexador&&principalDoAtivo(a.classe)!=='Renda Fixa');let totRV=0;ativosRV.forEach(a=>{totRV+=calcularRV(a).atual});const tops=ativosRV.map(a=>{const c=calcularRV(a);return{label:a.ticker,value:totRV?c.atual/totRV:0}});tops.sort((a,b)=>b.value-a.value);const t5=tops;destroyChart('top');charts.top=new Chart(document.getElementById('chartTop'),{type:'bar',data:{labels:t5.map(t=>t.label),datasets:[{label:'%',data:t5.map(t=>t.value*100),backgroundColor:PALETTE}]},options:{plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>ctx.label+': '+(ctx.parsed.y||0).toFixed(2)+'%'}}},scales:{x:{ticks:{color:'#ffffff'},grid:{color:'#2a3340'}},y:{ticks:{color:'#ffffff',callback:v=>v+'%'},grid:{color:'#2a3340'}}},maintainAspectRatio:false}});renderAlocacao();renderAlocacaoSetor('BR','tabelaAllocSetorBR');renderAlocacaoSetor('INTL','tabelaAllocSetorINTL');renderChartRF();renderChartLiquidez()}
+renderChartSetorFiltrado('chartSetorINTL','setorINTL','Renda Variavel Internacional');const it=state.rv.map(a=>{const c=calcularRV(a);return{label:a.ticker,value:c.lp}});state.rf.forEach(r=>{const c=calcularRF(r);it.push({label:r.nome,value:c.rendimento})});it.sort((a,b)=>b.value-a.value);destroyChart('lp');charts.lp=new Chart(document.getElementById('chartLP'),{type:'bar',data:{labels:it.map(i=>i.label),datasets:[{data:it.map(i=>i.value),backgroundColor:it.map(i=>i.value>=0?'#22c55e':'#ef4444')}]},options:{indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>ctx.label+': R$ '+(ctx.parsed.x||ctx.parsed||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}}},scales:{x:{ticks:{color:'#ffffff'},grid:{color:'#2a3340'}},y:{ticks:{color:'#ffffff'},grid:{color:'#2a3340'}}},maintainAspectRatio:false}});const ativosRV=state.rv.filter(a=>!a.indexador&&principalDoAtivo(a.classe)!=='Renda Fixa');let totRV=0;ativosRV.forEach(a=>{totRV+=calcularRV(a).atual});const tops=ativosRV.map(a=>{const c=calcularRV(a);return{label:a.ticker,value:totRV?c.atual/totRV:0}});tops.sort((a,b)=>b.value-a.value);const t5=tops;destroyChart('top');charts.top=new Chart(document.getElementById('chartTop'),{type:'bar',data:{labels:t5.map(t=>t.label),datasets:[{label:'%',data:t5.map(t=>t.value*100),backgroundColor:PALETTE}]},options:{plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>ctx.label+': '+(ctx.parsed.y||0).toFixed(2)+'%'}}},scales:{x:{ticks:{color:'#ffffff'},grid:{color:'#2a3340'}},y:{ticks:{color:'#ffffff',callback:v=>v+'%'},grid:{color:'#2a3340'}}},maintainAspectRatio:false}});renderAlocacao();renderAlocacaoSetor('BR','tabelaAllocSetorBR');renderAlocacaoSetor('INTL','tabelaAllocSetorINTL');renderChartRF();renderChartLiquidez();renderComparativo()}
 function renderChartLiquidez(){
   // Agrupa renda fixa (state.rf + RV com indexador setado) por bucket de liquidez
   const buckets={'Diaria':0,'2 a 5 dias':0,'Ate 1 ano':0,'1 a 5 anos':0,'Mais de 5 anos':0,'Sem vencimento':0};
@@ -1228,6 +1252,104 @@ if(state.rf.length>0)setTimeout(()=>{carregarHistoricoBCB().then(ok=>{if(ok>0){r
 setTimeout(()=>{fetchCotacoesMoeda().then(ok=>{if(ok){renderTudo()}})},300);
 atualizarLabelMoeda();
 setInterval(()=>{if(document.getElementById('tab-rf').classList.contains('active')||document.getElementById('tab-dash').classList.contains('active')){renderRF();renderResumo()}},60000);
+
+// ====== Comparativo de Rentabilidade ======
+function inicioMaisAntigo(){
+  let mais=null;
+  state.rv.forEach(a=>{if(a.data){const d=new Date(a.data);if(!mais||d<mais)mais=d}});
+  state.rf.forEach(r=>{if(r.data){const d=new Date(r.data);if(!mais||d<mais)mais=d}});
+  if(!mais){mais=new Date();mais.setFullYear(mais.getFullYear()-1)}
+  return mais;
+}
+function taxaAnualDoIndex(idx){
+  const cdi=Number(state.config.cdi)||14.65;
+  const selic=Number(state.config.selic)||14.75;
+  const ipca=Number(state.config.ipca)||4.0;
+  switch(idx){
+    case 'CDI':return cdi;
+    case 'CDI_120':return (Math.pow(1+cdi/100,1)-1)*120+0;
+    case 'CDI_150':return (Math.pow(1+cdi/100,1)-1)*150+0;
+    case 'SELIC':return selic;
+    case 'IPCA':return ipca;
+    case 'IPCA_6':return (1+ipca/100)*(1.06)*100-100;
+    case 'POUPANCA':return selic>=8.5?(0.7*selic+2.05):(cdi*0.7);
+    case 'CUSTOM':return Number(document.getElementById('compCustom').value)||10;
+  }
+  return cdi;
+}
+function nomeIndex(idx){
+  const c=Number(state.config.cdi)||14.65,s=Number(state.config.selic)||14.75,i=Number(state.config.ipca)||4.0;
+  const m={
+    CDI:'CDI ('+c.toFixed(2)+'% a.a.)',
+    CDI_120:'120% CDI',
+    CDI_150:'150% CDI',
+    SELIC:'Selic ('+s.toFixed(2)+'% a.a.)',
+    IPCA:'IPCA ('+i.toFixed(2)+'% a.a.)',
+    IPCA_6:'IPCA+6%',
+    POUPANCA:'Poupança',
+    CUSTOM:(document.getElementById('compCustom').value||'?')+'% a.a.'
+  };
+  return m[idx]||idx;
+}
+function renderComparativo(){
+  const canvas=document.getElementById('chartComparativo');
+  if(!canvas)return;
+  const idx=document.getElementById('compIndex').value;
+  const custWrap=document.getElementById('compCustomWrap');
+  if(custWrap)custWrap.style.display=(idx==='CUSTOM')?'flex':'none';
+  const desdeInput=document.getElementById('compDesde');
+  let desde;
+  if(desdeInput&&desdeInput.value){desde=new Date(desdeInput.value)}
+  else{
+    desde=inicioMaisAntigo();
+    if(desdeInput){const iso=desde.toISOString().slice(0,10);desdeInput.value=iso}
+  }
+  const hoje=new Date();
+  const dias=Math.max(1,Math.floor((hoje.getTime()-desde.getTime())/86400000));
+  const anos=dias/365;
+  const tV=totalRV(),tF=totalRF();
+  const investido=tV.inv+tF.inv,atual=tV.atual+tF.atual;
+  const rCarteira=investido?(atual-investido)/investido:0;
+  const taxaAA=taxaAnualDoIndex(idx);
+  const rIdx=Math.pow(1+taxaAA/100,anos)-1;
+  const passos=Math.min(24,Math.max(6,Math.round(anos*12)));
+  const labels=[],dCart=[],dIdx=[];
+  for(let i=0;i<=passos;i++){
+    const frac=i/passos;
+    const d=new Date(desde.getTime()+frac*dias*86400000);
+    labels.push(d.toLocaleDateString('pt-BR',{month:'short',year:'2-digit'}));
+    dCart.push(rCarteira*frac*100);
+    dIdx.push((Math.pow(1+taxaAA/100,anos*frac)-1)*100);
+  }
+  destroyChart('comp');
+  charts.comp=new Chart(canvas,{
+    type:'line',
+    data:{labels,datasets:[
+      {label:'Sua Carteira',data:dCart,borderColor:'#4f8cff',backgroundColor:'rgba(79,140,255,0.15)',borderWidth:3,tension:0.3,pointRadius:2,fill:true},
+      {label:nomeIndex(idx),data:dIdx,borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,0.1)',borderWidth:3,tension:0.3,pointRadius:2,fill:false,borderDash:[6,4]}
+    ]},
+    options:{
+      color:'#ffffff',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'top',labels:{color:'#ffffff',font:{size:13,weight:'500'}}},
+        tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+(ctx.parsed.y||0).toFixed(2)+'%'}}},
+      scales:{
+        x:{ticks:{color:'#ffffff'},grid:{color:'#2a3340'}},
+        y:{ticks:{color:'#ffffff',callback:v=>v.toFixed(1)+'%'},grid:{color:'#2a3340'},title:{display:true,text:'Rentabilidade acumulada',color:'#ffffff'}}
+      }
+    }
+  });
+  const resumo=document.getElementById('compResumo');
+  if(resumo){
+    const dif=(rCarteira-rIdx)*100;
+    const cor=dif>=0?'var(--green)':'var(--red)';
+    const seta=dif>=0?'▲':'▼';
+    resumo.innerHTML='<b>Período:</b> '+desde.toLocaleDateString('pt-BR')+' até hoje ('+Math.round(dias)+' dias) &nbsp;•&nbsp; '+
+      '<b>Sua carteira:</b> <span style="color:var(--accent-2)">'+(rCarteira*100).toFixed(2)+'%</span> &nbsp;•&nbsp; '+
+      '<b>'+nomeIndex(idx)+':</b> <span style="color:var(--yellow)">'+(rIdx*100).toFixed(2)+'%</span> &nbsp;•&nbsp; '+
+      '<b>Diferença:</b> <span style="color:'+cor+'">'+seta+' '+Math.abs(dif).toFixed(2)+' p.p.</span> '+
+      '<span style="color:'+cor+'">'+(dif>=0?'(carteira à frente)':'(carteira atrás)')+'</span>';
+  }
+}
 
 // ====== Firebase sync (Login Google + Firestore) ======
 let _fbUser=null,_fbSyncTimer=null,_fbLoadingCloud=false;
